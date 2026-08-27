@@ -1,0 +1,63 @@
+from __future__ import annotations
+
+import numpy as np
+
+from .base import OpticalElement
+
+
+class PlanarElement(
+    OpticalElement
+):
+    """
+    Generic planar optic.
+
+    Local plane:
+
+        z = 0
+    """
+
+    def __init__(
+        self,
+        width=50.0,
+        height=50.0,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(
+            *args,
+            **kwargs,
+        )
+
+        self.width = width
+        self.height = height
+
+    # --------------------------------------------------
+
+    def get_local_outline(self):
+
+        w = self.width / 2
+        h = self.height / 2
+
+        return np.array([
+            [-w, -h, 0],
+            [ w, -h, 0],
+            [ w,  h, 0],
+            [-w,  h, 0],
+            [-w, -h, 0],
+        ])
+
+    # --------------------------------------------------
+
+    def get_outline(self):
+
+        local = (
+            self.get_local_outline()
+        )
+
+        return np.array([
+            self.transform
+                .local_to_world_point(
+                    p
+                )
+            for p in local
+        ])

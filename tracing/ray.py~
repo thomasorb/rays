@@ -1,0 +1,79 @@
+from __future__ import annotations
+
+import numpy as np
+
+
+class Ray:
+    """
+    Optical ray.
+    """
+
+    def __init__(
+        self,
+        origin,
+        direction,
+        wavelength=632.8e-9,
+        amplitude=1.0,
+    ):
+        self.origin = np.asarray(
+            origin,
+            dtype=float,
+        )
+
+        self.direction = np.asarray(
+            direction,
+            dtype=float,
+        )
+
+        self.direction /= np.linalg.norm(
+            self.direction
+        )
+
+        self.wavelength = wavelength
+
+        self.amplitude = amplitude
+
+        self.geometric_length = 0.0
+
+        self.optical_length = 0.0
+
+        self.phase = 0.0
+
+        self.path = [
+            self.origin.copy()
+        ]
+
+        self.is_alive = True
+
+    # ------------------------------------------------------------------
+
+    def propagate(
+        self,
+        distance,
+        refractive_index=1.0,
+    ):
+        """
+        Propagate ray.
+        """
+
+        self.origin = (
+            self.origin
+            + distance * self.direction
+        )
+
+        self.geometric_length += distance
+
+        self.optical_length += (
+            refractive_index * distance
+        )
+
+        self.phase = (
+            2.0
+            * np.pi
+            * self.optical_length
+            / self.wavelength
+        )
+
+        self.path.append(
+            self.origin.copy()
+        )

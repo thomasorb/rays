@@ -1,0 +1,47 @@
+from __future__ import annotations
+
+import numpy as np
+
+from .base import OpticalElement
+
+
+class BeamSplitter(
+    OpticalElement
+):
+
+    def __init__(
+        self,
+        mode="reflection",
+        *args,
+        **kwargs,
+    ):
+        super().__init__(
+            *args,
+            **kwargs
+        )
+
+        self.mode = mode
+
+    # ------------------------------------------------
+
+    def interact(
+        self,
+        ray,
+    ):
+
+        n = self.transform.normal
+        n /= np.linalg.norm(n)
+
+        if self.mode == "transmission":
+            return
+
+        d = ray.direction
+
+        ray.direction = (
+            d
+            - 2.0 * np.dot(d, n) * n
+        )
+
+        ray.direction /= np.linalg.norm(
+            ray.direction
+        )
