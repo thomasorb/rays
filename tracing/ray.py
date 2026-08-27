@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import copy
 import numpy as np
 
 
 class Ray:
-    """
-    Optical ray.
-    """
 
     def __init__(
         self,
@@ -14,6 +12,7 @@ class Ray:
         direction,
         wavelength=632.8e-9,
         amplitude=1.0,
+        branch_id="root",
     ):
         self.origin = np.asarray(
             origin,
@@ -33,8 +32,9 @@ class Ray:
 
         self.amplitude = amplitude
 
-        self.geometric_length = 0.0
+        self.branch_id = branch_id
 
+        self.geometric_length = 0.0
         self.optical_length = 0.0
 
         self.phase = 0.0
@@ -43,20 +43,25 @@ class Ray:
             self.origin.copy()
         ]
 
+        self.segments = []
+
         self.is_alive = True
 
-        self.segments = []
+        self.termination_reason = None
         
-    # ------------------------------------------------------------------
+    # ----------------------------------------------------------
+
+    def clone(self):
+
+        return copy.deepcopy(self)
+
+    # ----------------------------------------------------------
 
     def propagate(
         self,
         distance,
         refractive_index=1.0,
     ):
-        """
-        Propagate ray and store segment.
-        """
 
         start = self.origin.copy()
 
@@ -98,6 +103,8 @@ class Ray:
             self.origin.copy()
         )
 
+    # ----------------------------------------------------------
+
     @property
     def opl(self):
 
@@ -105,6 +112,8 @@ class Ray:
             seg["opl"]
             for seg in self.segments
         )
+
+    # ----------------------------------------------------------
 
     @property
     def geometric_distance(self):
@@ -114,12 +123,49 @@ class Ray:
             for seg in self.segments
         )
 
+    @property
+    def generation(self):
+        """
+        Number of beam splitter generations.
+        """
+
+        return self.branch_id.count(".")
+
+    # ----------------------------------------------------------
+
+    def opd(
+        self,
+        other_ray,
+    ):
+        return (
+            self.optical_length
+            - other_ray.optical_length
+        )
+
+    # ----------------------------------------------------------
+
+    def phase_difference(
+        self,
+        other_ray,
+    ):
+        opd = self.opd(
+            other_ray
+        )
+
+        return (
+            2.0
+            * np.pi
+            * opd
+            / self.wavelength
+        )
+
+    # ----------------------------------------------------------
+
     def summary(self):
 
         print()
-
         print(
-            "===== RAY SUMMARY ====="
+            f"===== {self.branch_id} ====="
         )
 
         for i, segment in enumerate(
@@ -127,56 +173,30 @@ class Ray:
         ):
 
             print(
-                f"{i:03d} "
-                f"L={segment['distance']:.6f} "
-                f"n={segment['n']:.4f} "
+                f"{i:03d}  "
+                f"L={segment['distance']:.6f}  "
+                f"n={segment['n']:.3f}  "
                 f"OPL={segment['opl']:.6f}"
             )
 
         print()
 
         print(
-            f"Total geometric length : "
-            f"{self.geometric_distance:.6f}"
+            "Total geometric length:",
+            self.geometric_distance,
         )
 
         print(
-            f"Total optical length : "
-            f"{self.opl:.6f}"
+            "Total optical length:",
+            self.opl,
         )
 
         print(
-            f"Phase : "
-            f"{self.phase:.6e}"
+            "Amplitude:",
+            self.amplitude,
         )
 
-    def opd(
-        self,
-        other_ray,
-    ):
-        """
-        Optical path difference.
-        """
-
-        return (
-            self.optical_length
-            - other_ray.optical_length
-        )
-
-    def phase_difference(
-        self,
-        other_ray,
-    ):
-        """
-        Relative phase.
-        """
-
-        opd = self.opd(
-            other_ray
-        )
-
-        return (
-            2*np.pi
-            * opd
-            / self.wavelength
+        print(
+            "Phase:",
+            self.phase,
         )

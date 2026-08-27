@@ -33,8 +33,11 @@ class Source:
 
     def emit(self):
 
+ 
         return Ray(
             self.position,
             self.direction,
             wavelength=self.wavelength,
+            amplitude=1.0,
+            branch_id="root",
         )

@@ -38,3 +38,8 @@ class OpticalElement:
 
     def interact(self, ray):
         raise NotImplementedError
+
+
+    @property
+    def normal(self):
+        return self.transform.normal

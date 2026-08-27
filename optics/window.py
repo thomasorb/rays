@@ -113,7 +113,11 @@ class Window(
             1.0,
         )
 
+    
         ray.direction = d2
+        
         ray.direction /= np.linalg.norm(
             ray.direction
         )
+        
+        return [ray]

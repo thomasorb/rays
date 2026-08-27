@@ -5,18 +5,18 @@ import numpy as np
 from .planar import PlanarElement
 
 
-class Mirror(PlanarElement):
+class Mirror(
+    PlanarElement
+):
 
     def interact(
         self,
         ray,
     ):
-        """
-        Specular reflection.
-        """
 
-        n = self.transform.normal
-        n = n / np.linalg.norm(n)
+        n = self.normal
+
+        n /= np.linalg.norm(n)
 
         d = ray.direction
 
@@ -29,4 +29,4 @@ class Mirror(PlanarElement):
             ray.direction
         )
 
-  
+        return [ray]

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import numpy as np
-
 from .planar import PlanarElement
 
 
@@ -19,22 +17,14 @@ class Detector(
             **kwargs
         )
 
-        self.hit = False
+        self.hits = []
 
-        self.hit_position = None
-
-        self.last_phase = None
-        self.last_opl = None
-
-    # ------------------------------------------------
-
+        
+    # ----------------------------------------------------------
     def interact(
         self,
         ray,
-    ):
-        """
-        Record impact.
-        """
+        ):
 
         local_point = (
             self.transform
@@ -43,14 +33,18 @@ class Detector(
             )
         )
 
-        self.hit = True
-
-        self.hit_position = local_point
-
-        self.last_phase = ray.phase
-
-        self.last_opl = (
-            ray.optical_length
+        self.hits.append(
+            {
+                "branch": ray.branch_id,
+                "position": local_point,
+                "opl": ray.optical_length,
+                "phase": ray.phase,
+                "amplitude": ray.amplitude,
+            }
         )
 
         ray.is_alive = False
+
+        ray.termination_reason = "detector"
+        
+        return [ray]

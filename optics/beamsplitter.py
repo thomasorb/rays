@@ -11,7 +11,9 @@ class BeamSplitter(
 
     def __init__(
         self,
-        mode="reflection",
+        R=0.5,
+        T=0.5,
+        max_generation_depth=100,
         *args,
         **kwargs,
     ):
@@ -20,28 +22,78 @@ class BeamSplitter(
             **kwargs
         )
 
-        self.mode = mode
+        self.R = R
+        self.T = T
 
-    # ------------------------------------------------
+        self.max_generation_depth = (
+            max_generation_depth
+        )
+    # ----------------------------------------------------------
 
     def interact(
         self,
         ray,
     ):
 
-        n = self.transform.normal
+        #
+        # Stop beam proliferation
+        #
+
+        if (
+            ray.generation
+            >= self.max_generation_depth
+        ):
+            return [ray]
+
+        n = self.normal
         n /= np.linalg.norm(n)
 
-        if self.mode == "transmission":
-            return
+        #
+        # transmitted branch
+        #
 
-        d = ray.direction
+        transmitted = ray.clone()
 
-        ray.direction = (
+        transmitted.branch_id = (
+            ray.branch_id + ".T"
+        )
+
+        transmitted.amplitude *= (
+            np.sqrt(self.T)
+        )
+
+        #
+        # reflected branch
+        #
+
+        reflected = ray.clone()
+
+        reflected.branch_id = (
+            ray.branch_id + ".R"
+        )
+
+        d = reflected.direction
+
+        reflected.direction = (
             d
-            - 2.0 * np.dot(d, n) * n
+            - 2.0
+            * np.dot(d, n)
+            * n
         )
 
-        ray.direction /= np.linalg.norm(
-            ray.direction
+        reflected.direction /= (
+            np.linalg.norm(
+                reflected.direction
+            )
         )
+
+        reflected.amplitude *= (
+            np.sqrt(self.R)
+        )
+
+        ray.is_alive = False
+
+        return [
+            reflected,
+            transmitted,
+        ]

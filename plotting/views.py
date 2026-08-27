@@ -159,6 +159,7 @@ def plot_system(
                 ax=ax,
             )
 
+
     ax.grid(True)
 
     ax.set_aspect("equal")

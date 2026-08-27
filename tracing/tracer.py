@@ -60,17 +60,26 @@ class Tracer:
 
     def trace(
         self,
-        ray,
-        max_bounces=100,
+        initial_ray,
+        max_interactions=100,
     ):
-        """
-        Trace ray until death.
-        """
 
-        for _ in range(max_bounces):
+        active_rays = [
+            initial_ray
+        ]
 
-            if not ray.is_alive:
+        finished_rays = []
+
+        interactions = 0
+
+        while active_rays:
+
+            ray = active_rays.pop()
+
+            if interactions > max_interactions:
                 break
+
+            interactions += 1
 
             element, distance = (
                 self.find_next_element(
@@ -79,10 +88,31 @@ class Tracer:
             )
 
             if element is None:
-                break
+
+                finished_rays.append(
+                    ray
+                )
+
+                continue
 
             ray.propagate(distance)
 
-            element.interact(ray)
+            new_rays = element.interact(
+                ray
+            )
 
-        return ray
+            for child in new_rays:
+
+                if child.is_alive:
+
+                    active_rays.append(
+                        child
+                    )
+
+                else:
+
+                    finished_rays.append(
+                        child
+                    )
+
+        return finished_rays
