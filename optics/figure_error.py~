@@ -1,0 +1,115 @@
+from __future__ import annotations
+
+import numpy as np
+
+
+class FigureError:
+    """
+    Simple figure error model.
+
+    Parameters
+    ----------
+    rms : float
+        Surface RMS [m]
+    seed : int | None
+    """
+
+    def __init__(
+        self,
+        rms,
+        seed=None,
+    ):
+
+        self.rms = float(rms)
+
+        self.rng = np.random.default_rng(
+            seed
+        )
+
+        #
+        # Current realization
+        #
+        self.current_surface_error = 0.0
+
+        self.randomize()
+
+    # --------------------------------------------------
+
+    @classmethod
+    def from_lambda_pv(
+        cls,
+        wavelength,
+        ratio,
+        seed=None,
+    ):
+        """
+        Example:
+
+            λ/20 surface
+
+        becomes roughly
+
+            RMS ≈ λ/80
+        """
+
+        rms = wavelength / ratio / 4.0
+
+        return cls(
+            rms=rms,
+            seed=seed,
+        )
+
+    # --------------------------------------------------
+
+    def randomize(self):
+        """
+        Generate a new realization.
+        """
+
+        self.current_surface_error = (
+            self.rng.normal(
+                0.0,
+                self.rms,
+            )
+        )
+
+    # --------------------------------------------------
+
+    def surface_error(
+        self,
+        x,
+        y,
+    ):
+        """
+        Surface height error [m]
+
+        Currently independent of x,y.
+        """
+
+        return self.current_surface_error
+
+    # --------------------------------------------------
+
+    def opd(
+        self,
+        x,
+        y,
+    ):
+        """
+        Returns surface error.
+
+        The optical component decides
+        how it affects OPL.
+        """
+
+        return self.surface_error(
+            x,
+            y,
+        )
+
+    # --------------------------------------------------
+
+    @property
+    def rms_nm(self):
+
+        return self.rms * 1e9
