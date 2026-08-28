@@ -35,10 +35,6 @@ class BeamSplitter(
         ray,
     ):
 
-        #
-        # Stop beam proliferation
-        #
-
         if (
             ray.generation
             >= self.max_generation_depth
@@ -46,10 +42,11 @@ class BeamSplitter(
             return [ray]
 
         n = self.normal
+
         n /= np.linalg.norm(n)
 
         #
-        # transmitted branch
+        # Transmission
         #
 
         transmitted = ray.clone()
@@ -58,12 +55,12 @@ class BeamSplitter(
             ray.branch_id + ".T"
         )
 
-        transmitted.amplitude *= (
+        transmitted.complex_amplitude *= (
             np.sqrt(self.T)
         )
 
         #
-        # reflected branch
+        # Reflection
         #
 
         reflected = ray.clone()
@@ -76,9 +73,7 @@ class BeamSplitter(
 
         reflected.direction = (
             d
-            - 2.0
-            * np.dot(d, n)
-            * n
+            - 2*np.dot(d,n)*n
         )
 
         reflected.direction /= (
@@ -87,8 +82,8 @@ class BeamSplitter(
             )
         )
 
-        reflected.amplitude *= (
-            np.sqrt(self.R)
+        reflected.complex_amplitude *= (
+            1j*np.sqrt(self.R)
         )
 
         ray.is_alive = False

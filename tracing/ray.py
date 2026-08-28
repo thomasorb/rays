@@ -11,9 +11,10 @@ class Ray:
         origin,
         direction,
         wavelength=632.8e-9,
-        amplitude=1.0,
+        complex_amplitude=1.0 + 0.0j,
         branch_id="root",
     ):
+
         self.origin = np.asarray(
             origin,
             dtype=float,
@@ -30,14 +31,17 @@ class Ray:
 
         self.wavelength = wavelength
 
-        self.amplitude = amplitude
+        #
+        # Complex field amplitude
+        #
+        self.complex_amplitude = (
+            complex(complex_amplitude)
+        )
 
         self.branch_id = branch_id
 
         self.geometric_length = 0.0
         self.optical_length = 0.0
-
-        self.phase = 0.0
 
         self.path = [
             self.origin.copy()
@@ -48,14 +52,18 @@ class Ray:
         self.is_alive = True
 
         self.termination_reason = None
-        
-    # ----------------------------------------------------------
+
+    # ==================================================
+    # utilities
+    # ==================================================
 
     def clone(self):
 
         return copy.deepcopy(self)
 
-    # ----------------------------------------------------------
+    # ==================================================
+    # propagation
+    # ==================================================
 
     def propagate(
         self,
@@ -72,94 +80,120 @@ class Ray:
 
         end = self.origin.copy()
 
+        opl = (
+            distance
+            * refractive_index
+        )
+
         self.segments.append(
             {
                 "start": start,
                 "end": end,
                 "distance": distance,
                 "n": refractive_index,
-                "opl": (
-                    distance
-                    * refractive_index
-                ),
+                "opl": opl,
             }
         )
 
-        self.geometric_length += distance
-
-        self.optical_length += (
+        self.geometric_length += (
             distance
-            * refractive_index
         )
 
-        self.phase = (
-            2.0
-            * np.pi
-            * self.optical_length
-            / self.wavelength
+        self.optical_length += (
+            opl
         )
 
         self.path.append(
             self.origin.copy()
         )
 
-    # ----------------------------------------------------------
+    # ==================================================
+    # properties
+    # ==================================================
+
+    @property
+    def generation(self):
+
+        return self.branch_id.count(".")
+
+    # --------------------------------------------------
+
+    @property
+    def amplitude(self):
+
+        return abs(
+            self.complex_amplitude
+        )
+
+    # --------------------------------------------------
+
+    @property
+    def phase(self):
+
+        return (
+            2*np.pi
+            * self.optical_length
+            / self.wavelength
+        ) % (2*np.pi)
+
+    # --------------------------------------------------
+
+    @property
+    def total_phase(self):
+
+        return (
+            2*np.pi
+            * self.optical_length
+            / self.wavelength
+        )
+
+    # --------------------------------------------------
+
+    @property
+    def field(self):
+
+        return (
+            self.complex_amplitude
+            * np.exp(
+                1j*self.phase
+            )
+        )
+
+    # --------------------------------------------------
 
     @property
     def opl(self):
 
-        return sum(
-            seg["opl"]
-            for seg in self.segments
-        )
+        return self.optical_length
 
-    # ----------------------------------------------------------
-
-    @property
-    def geometric_distance(self):
-
-        return sum(
-            seg["distance"]
-            for seg in self.segments
-        )
-
-    @property
-    def generation(self):
-        """
-        Number of beam splitter generations.
-        """
-
-        return self.branch_id.count(".")
-
-    # ----------------------------------------------------------
+    # ==================================================
+    # interferometry
+    # ==================================================
 
     def opd(
         self,
         other_ray,
     ):
         return (
-            self.optical_length
-            - other_ray.optical_length
+            self.opl
+            - other_ray.opl
         )
 
-    # ----------------------------------------------------------
+    # --------------------------------------------------
 
     def phase_difference(
         self,
         other_ray,
     ):
-        opd = self.opd(
-            other_ray
-        )
-
         return (
-            2.0
-            * np.pi
-            * opd
+            2*np.pi
+            * self.opd(other_ray)
             / self.wavelength
-        )
+        ) % (2*np.pi)
 
-    # ----------------------------------------------------------
+    # ==================================================
+    # reporting
+    # ==================================================
 
     def summary(self):
 
@@ -168,35 +202,52 @@ class Ray:
             f"===== {self.branch_id} ====="
         )
 
-        for i, segment in enumerate(
+        for i, seg in enumerate(
             self.segments
         ):
 
             print(
-                f"{i:03d}  "
-                f"L={segment['distance']:.6f}  "
-                f"n={segment['n']:.3f}  "
-                f"OPL={segment['opl']:.6f}"
+                f"{i:03d} "
+                f"L={seg['distance']:.6f} "
+                f"n={seg['n']:.4f} "
+                f"OPL={seg['opl']:.6f}"
             )
 
         print()
 
         print(
-            "Total geometric length:",
-            self.geometric_distance,
+            "Geometric length :",
+            self.geometric_length
         )
 
         print(
-            "Total optical length:",
-            self.opl,
+            "Optical length   :",
+            self.opl
         )
 
         print(
-            "Amplitude:",
-            self.amplitude,
+            "Amplitude        :",
+            self.amplitude
         )
 
         print(
-            "Phase:",
-            self.phase,
+            "Phase            :",
+            self.phase
         )
+
+        print(
+            "Complex amplitude:",
+            self.complex_amplitude
+        )
+
+        print(
+            "Field            :",
+            self.field
+        )
+
+        if self.termination_reason:
+
+            print(
+                "Termination      :",
+                self.termination_reason
+            )
