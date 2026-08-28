@@ -53,6 +53,10 @@ class Ray:
 
         self.termination_reason = None
 
+        self.phase_errors = []
+
+        self.generation = 0
+        
     # ==================================================
     # utilities
     # ==================================================
@@ -110,13 +114,6 @@ class Ray:
     # ==================================================
     # properties
     # ==================================================
-
-    @property
-    def generation(self):
-
-        return self.branch_id.count(".")
-
-    # --------------------------------------------------
 
     @property
     def amplitude(self):

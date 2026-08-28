@@ -80,6 +80,10 @@ class Window(
         Plane parallel plate.
         """
 
+        self.apply_wavefront_error(
+            ray
+        )
+        
         n = (
             self.transform.normal
         )

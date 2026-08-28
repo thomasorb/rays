@@ -35,6 +35,10 @@ class BeamSplitter(
         ray,
     ):
 
+        self.apply_wavefront_error(
+            ray
+        )
+
         if (
             ray.generation
             >= self.max_generation_depth
@@ -55,6 +59,8 @@ class BeamSplitter(
             ray.branch_id + ".T"
         )
 
+        transmitted.generation += 1
+
         transmitted.complex_amplitude *= (
             np.sqrt(self.T)
         )
@@ -68,6 +74,8 @@ class BeamSplitter(
         reflected.branch_id = (
             ray.branch_id + ".R"
         )
+
+        reflected.generation += 1
 
         d = reflected.direction
 

@@ -125,15 +125,22 @@ def plot_system(
     tracer,
     rays=None,
     view="xz",
-    figsize=(8, 6),
+    figsize=(8,6),
+    ax=None,
 ):
     """
     Complete system drawing.
     """
 
-    fig, ax = plt.subplots(
-        figsize=figsize
-    )
+    if ax is None:
+
+        fig, ax = plt.subplots(
+            figsize=figsize
+        )
+
+    else:
+
+        fig = ax.figure
 
     for element in tracer.elements:
 
@@ -244,3 +251,41 @@ def plot_phase_histogram(
     )
 
     return fig, ax
+
+def plot_system_3views(
+    tracer,
+    rays,
+):
+
+    fig, axes = plt.subplots(
+        1,
+        3,
+        figsize=(15,5),
+    )
+
+    plot_system(
+        tracer,
+        rays,
+        view="xy",
+        ax=axes[0],
+    )
+
+    plot_system(
+        tracer,
+        rays,
+        view="xz",
+        ax=axes[1],
+    )
+
+    plot_system(
+        tracer,
+        rays,
+        view="yz",
+        ax=axes[2],
+    )
+
+    axes[0].set_title("XY")
+    axes[1].set_title("XZ")
+    axes[2].set_title("YZ")
+
+    plt.tight_layout()
