@@ -1,0 +1,17 @@
+from __future__ import annotations
+
+from .window import Window
+
+
+class Compensator(
+    Window
+):
+    """
+    Semantically distinct from
+    Window although physically
+    identical.
+
+    Used in Michelsons.
+    """
+
+    pass

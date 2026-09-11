@@ -8,15 +8,26 @@ from .planar import PlanarElement
 class BeamSplitter(
     PlanarElement
 ):
+    """
+    Infinitely thin beam splitter.
+
+    Reflection occurs exactly at
+    the position specified by the user.
+
+    Any glass behind the coating
+    must be modelled separately
+    using Window().
+    """
 
     def __init__(
         self,
         R=0.5,
         T=0.5,
-        max_generation_depth=100,
+        max_generation_depth=2,
         *args,
         **kwargs,
     ):
+
         super().__init__(
             *args,
             **kwargs
@@ -28,16 +39,13 @@ class BeamSplitter(
         self.max_generation_depth = (
             max_generation_depth
         )
-    # ----------------------------------------------------------
+
+    # --------------------------------------------------
 
     def interact(
         self,
         ray,
     ):
-
-        self.apply_wavefront_error(
-            ray
-        )
 
         if (
             ray.generation
@@ -45,15 +53,19 @@ class BeamSplitter(
         ):
             return [ray]
 
-        n = self.normal
+        normal = self.normal
 
-        n /= np.linalg.norm(n)
+        normal /= np.linalg.norm(
+            normal
+        )
 
         #
-        # Transmission
+        # transmitted
         #
 
-        transmitted = ray.clone()
+        transmitted = (
+            ray.clone()
+        )
 
         transmitted.branch_id = (
             ray.branch_id + ".T"
@@ -66,10 +78,12 @@ class BeamSplitter(
         )
 
         #
-        # Reflection
+        # reflected
         #
 
-        reflected = ray.clone()
+        reflected = (
+            ray.clone()
+        )
 
         reflected.branch_id = (
             ray.branch_id + ".R"
@@ -81,7 +95,12 @@ class BeamSplitter(
 
         reflected.direction = (
             d
-            - 2*np.dot(d,n)*n
+            - 2.0
+            * np.dot(
+                d,
+                normal,
+            )
+            * normal
         )
 
         reflected.direction /= (
@@ -91,7 +110,10 @@ class BeamSplitter(
         )
 
         reflected.complex_amplitude *= (
-            1j*np.sqrt(self.R)
+            1j
+            * np.sqrt(
+                self.R
+            )
         )
 
         ray.is_alive = False

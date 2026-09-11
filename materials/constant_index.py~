@@ -1,0 +1,16 @@
+from __future__ import annotations
+
+
+class ConstantIndex:
+
+    def __init__(
+        self,
+        n,
+    ):
+        self.n0 = float(n)
+
+    def n(
+        self,
+        wavelength,
+    ):
+        return self.n0

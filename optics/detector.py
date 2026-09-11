@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import numpy as np
 
+from collections import defaultdict
+
 from .planar import PlanarElement
 
-from collections import defaultdict
 
 class Detector(
     PlanarElement
@@ -28,7 +29,7 @@ class Detector(
 
     def interact(
         self,
-       ray,
+        ray,
     ):
 
         local_point = (
@@ -56,44 +57,33 @@ class Detector(
         return [ray]
 
     # ===================================================
-    # Field quantities
+    # Grouping
     # ===================================================
 
     @property
-    def field(self):
+    def hit_groups(self):
         """
-        Total complex field.
-        """
-
-        return sum(
-            hit["field"]
-            for hit in self.hits
-        )
-
-    @property
-    def field_groups(self):
-        """
-        Group fields by bundle sample.
+        Group hits by bundle sample.
 
         Example:
 
-            root.0.R.R
-            root.0.T.T
+            root.17.R.R
+            root.17.T.T
 
-        become:
+        become
 
-            group 'root.0'
+            root.17
         """
 
         groups = defaultdict(list)
 
         for hit in self.hits:
 
-            tokens = hit["branch"].split(".")
+            tokens = (
+                hit["branch"]
+                .split(".")
+            )
 
-            #
-            # root.17.R.T
-            #
             if len(tokens) >= 2:
 
                 bundle_id = (
@@ -107,46 +97,71 @@ class Detector(
                 bundle_id = tokens[0]
 
             groups[bundle_id].append(
-                hit["field"]
+                hit
             )
 
         return groups
 
+    # ===================================================
+    # Fields
+    # ===================================================
+
     @property
-    def incoherent_field_norm(
-        self,
-    ):
+    def field(self):
         """
-        Sum of field magnitudes.
+        Total coherent field.
+        Mostly for debugging.
         """
 
         return sum(
-            abs(hit["field"])
+            hit["field"]
             for hit in self.hits
         )
 
     # ---------------------------------------------------
 
     @property
+    def incoherent_field_norm(
+        self,
+    ):
+
+        return sum(
+            abs(hit["field"])
+            for hit in self.hits
+        )
+
+    # ===================================================
+    # Physics
+    # ===================================================
+
+    @property
     def intensity(self):
         """
         Physical detector intensity.
 
-        Interfere fields within each
-        bundle sample.
+        For each bundle sample:
 
-        Then sum intensities.
+            E = sum(fields)
+
+        Then:
+
+            I += |E|²
         """
 
         intensity = 0.0
 
-        for fields in (
-            self.field_groups.values()
+        for hits in (
+            self.hit_groups.values()
         ):
 
-            E = sum(fields)
+            E = sum(
+                hit["field"]
+                for hit in hits
+            )
 
-            intensity += abs(E)**2
+            intensity += (
+                abs(E)**2
+            )
 
         return intensity
 
@@ -155,14 +170,50 @@ class Detector(
     @property
     def power(self):
         """
-        Incoherent sum of powers.
-        Useful for debugging.
+        Incoherent power.
+        Useful for diagnostics.
         """
 
         return sum(
             abs(hit["field"])**2
             for hit in self.hits
         )
+
+    # ---------------------------------------------------
+
+    @property
+    def visibility(self):
+
+        coherent = 0.0
+        incoherent = 0.0
+
+        for hits in (
+            self.hit_groups.values()
+        ):
+
+            E = sum(
+                hit["field"]
+                for hit in hits
+            )
+
+            coherent += abs(E)
+
+            incoherent += sum(
+                abs(hit["field"])
+                for hit in hits
+            )
+
+        if incoherent == 0:
+            return 0.0
+
+        return (
+            coherent
+            / incoherent
+        )
+
+    # ===================================================
+    # Statistics
+    # ===================================================
 
     @property
     def phases(self):
@@ -174,52 +225,46 @@ class Detector(
             for hit in self.hits
         ])
 
+    # ---------------------------------------------------
+
     @property
-    def visibility(self):
+    def n_bundle_samples(self):
 
-        coherent = 0.0
-        incoherent = 0.0
+        return len(
+            self.hit_groups
+        )
 
-        for fields in (
-            self.field_groups.values()
+    # ---------------------------------------------------
+
+    @property
+    def mean_intensity_per_sample(
+        self,
+    ):
+
+        if (
+            self.n_bundle_samples
+            == 0
         ):
-
-            E = sum(fields)
-
-            coherent += abs(E)
-
-            incoherent += sum(
-                abs(f)
-                for f in fields
-            )
-
-        if incoherent == 0:
             return 0.0
 
         return (
-            coherent
-            / incoherent
+            self.intensity
+            / self.n_bundle_samples
         )
-    
-    @property
-    def n_bundle_samples(self):
-        
-        return len(
-            self.field_groups
-        )
-    
+
     # ===================================================
     # Utilities
     # ===================================================
 
-    def clear(self):
-        """
-        Clear detector before a new run.
-        """
+    def clear(
+        self,
+    ):
 
         self.hits.clear()
 
-    # ---------------------------------------------------
+    # ===================================================
+    # Reporting
+    # ===================================================
 
     def report(
         self,
@@ -227,32 +272,39 @@ class Detector(
     ):
 
         print()
+
         print(
             f"===== DETECTOR {self.name} ====="
         )
 
         print(
-            f"Hits       : {len(self.hits)}"
+            f"Hits       : "
+            f"{len(self.hits)}"
         )
 
         print(
-            "Bundle samples :",
-            self.n_bundle_samples
-        )
-        
-        print(
-            f"Power      : {self.power:.6f}"
+            f"Bundle samples : "
+            f"{self.n_bundle_samples}"
         )
 
         print(
-            f"Intensity  : {self.intensity:.6f}"
+            f"Power      : "
+            f"{self.power:.6f}"
         )
 
         print(
-            "Phase std :",
-            np.std(
-                self.phases
-            )
+            f"Intensity  : "
+            f"{self.intensity:.6f}"
+        )
+
+        print(
+            f"Mean/sample: "
+            f"{self.mean_intensity_per_sample:.6f}"
+        )
+
+        print(
+            f"Phase std  : "
+            f"{np.std(self.phases):.6f}"
         )
 
         print(
@@ -267,7 +319,9 @@ class Detector(
 
         for hit in self.hits:
 
-            amp = abs(hit["field"])
+            amp = abs(
+                hit["field"]
+            )
 
             phase = np.angle(
                 hit["field"]

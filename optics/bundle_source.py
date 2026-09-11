@@ -52,9 +52,62 @@ class CircularBundleSource:
             / np.sqrt(self.n_rays)
         )
 
+        #
+        # Optical axis
+        #
+        k = (
+            self.direction
+            / np.linalg.norm(
+                self.direction
+            )
+        )
+
+        #
+        # Build a local orthonormal basis
+        # transverse to propagation
+        #
+
+        tmp = np.array(
+            [0.0, 0.0, 1.0]
+        )
+
+        if abs(
+            np.dot(k, tmp)
+        ) > 0.95:
+
+            tmp = np.array(
+                [0.0, 1.0, 0.0]
+            )
+
+        u = np.cross(
+            k,
+            tmp,
+        )
+
+        u /= np.linalg.norm(
+            u
+        )
+
+        v = np.cross(
+            k,
+            u,
+        )
+
+        v /= np.linalg.norm(
+            v
+        )
+
+        #
+        # Generate rays
+        #
+
         for i in range(
             self.n_rays
         ):
+
+            #
+            # Uniform disk sampling
+            #
 
             r = (
                 self.radius
@@ -68,31 +121,32 @@ class CircularBundleSource:
                 * np.random.rand()
             )
 
-            x = r * np.cos(theta)
-            y = r * np.sin(theta)
+            du = (
+                r * np.cos(theta)
+            )
 
-            origin = (
-                self.position.copy()
+            dv = (
+                r * np.sin(theta)
             )
 
             #
-            # NOTE:
-            # This is still using the global XY plane.
-            # We'll improve this later by constructing
-            # a local transverse basis (u,v).
+            # Position in transverse plane
             #
-            origin[0] += x
-            origin[1] += y
+
+            origin = (
+                self.position
+                + du * u
+                + dv * v
+            )
 
             rays.append(
                 Ray(
                     origin=origin,
+
                     direction=self.direction,
+
                     wavelength=self.wavelength,
 
-                    #
-                    # Normalized complex amplitude
-                    #
                     complex_amplitude=
                         amplitude + 0j,
 

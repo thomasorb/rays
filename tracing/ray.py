@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import numpy as np
+from materials.air import AIR
 
 
 class Ray:
@@ -56,7 +57,8 @@ class Ray:
         self.phase_errors = []
 
         self.generation = 0
-        
+  
+        self.current_material = AIR
     # ==================================================
     # utilities
     # ==================================================
@@ -68,47 +70,30 @@ class Ray:
     # ==================================================
     # propagation
     # ==================================================
-
     def propagate(
         self,
         distance,
-        refractive_index=1.0,
     ):
-
-        start = self.origin.copy()
 
         self.origin = (
             self.origin
             + distance * self.direction
         )
 
-        end = self.origin.copy()
-
-        opl = (
-            distance
-            * refractive_index
-        )
-
-        self.segments.append(
-            {
-                "start": start,
-                "end": end,
-                "distance": distance,
-                "n": refractive_index,
-                "opl": opl,
-            }
+        self.path.append(
+            self.origin.copy()
         )
 
         self.geometric_length += (
             distance
         )
 
-        self.optical_length += (
-            opl
+        n = self.current_material.n(
+            self.wavelength
         )
 
-        self.path.append(
-            self.origin.copy()
+        self.optical_length += (
+            distance * n
         )
 
     # ==================================================

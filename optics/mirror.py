@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-import numpy as np
+from materials.constant_index import (
+    ConstantIndex
+)
 
-from .planar import PlanarElement
+from .optical_interface import (
+    OpticalInterface
+)
 
+from materials.air import AIR
 
 class Mirror(
-    PlanarElement
+    OpticalInterface
 ):
 
     def __init__(
@@ -14,40 +19,16 @@ class Mirror(
         *args,
         **kwargs,
     ):
+
+       
         super().__init__(
+
+            material1=AIR,
+            material2=AIR,
+
+            R=1.0,
+            T=0.0,
+
             *args,
-            **kwargs
+            **kwargs,
         )
-
-
-    def interact(
-        self,
-        ray,
-    ):
-
-        self.apply_wavefront_error(
-            ray
-        )
-
-        n = self.normal
-
-        n /= np.linalg.norm(
-            n
-        )
-
-        d = ray.direction
-
-        ray.direction = (
-            d
-            - 2.0
-            * np.dot(d, n)
-            * n
-        )
-
-        ray.direction /= (
-            np.linalg.norm(
-                ray.direction
-            )
-        )
-
-        return [ray]

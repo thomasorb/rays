@@ -58,27 +58,38 @@ def plot_ray(
     return ax
 
 
-def plot_rays(
-    rays,
+def plot_ray(
+    ray,
     view="xz",
     ax=None,
+    **kwargs,
 ):
-    """
-    Plot multiple rays.
-    """
 
     if ax is None:
         fig, ax = plt.subplots()
 
-    for ray in rays:
-        plot_ray(
-            ray,
-            view=view,
-            ax=ax,
-        )
+    i, j = _get_axes(view)
+
+    path = np.asarray(
+        ray.path
+    )
+
+    ax.plot(
+        path[:, i],
+        path[:, j],
+
+        "-",
+
+        lw=1,
+
+        color="black",
+
+        alpha=0.4,
+
+        zorder=1,
+    )
 
     return ax
-
 
 # ==========================================================
 # Optical elements
@@ -88,38 +99,211 @@ def plot_element(
     element,
     view="xz",
     ax=None,
-    color="black",
 ):
     """
-    Plot an optical element.
-
-    Requires get_outline().
+    Pretty optical rendering.
     """
-
-    if not hasattr(
-        element,
-        "get_outline"
-    ):
-        return ax
 
     if ax is None:
         fig, ax = plt.subplots()
 
-    outline = element.get_outline()
+    classname = (
+        element.__class__.__name__
+    )
 
-    if outline is None:
-        return ax
+    #
+    # Style
+    #
+
+    if classname == "Mirror":
+
+        color = "royalblue"
+
+    elif classname == "BeamSplitter":
+
+        color = "crimson"
+
+    elif classname == "Compensator":
+
+        color = "darkorange"
+
+    elif classname == "Window":
+
+        color = "purple"
+
+    elif classname == "Detector":
+
+        color = "forestgreen"
+
+    else:
+
+        color = "black"
+
+    #
+    # Volumes
+    #
+
+    if hasattr(
+        element,
+        "get_volume_vertices",
+    ):
+
+        plot_volume_element(
+            element,
+            view,
+            ax,
+            color,
+        )
+
+    #
+    # Surfaces
+    #
+
+    elif hasattr(
+        element,
+        "get_outline",
+    ):
+
+        outline = (
+            element.get_outline()
+        )
+
+        i, j = _get_axes(view)
+
+        ax.plot(
+            outline[:, i],
+            outline[:, j],
+
+            color=color,
+
+            linewidth=3,
+
+            zorder=20,
+        )
+
+    #
+    # Label
+    #
+
+    center = (
+        element.transform.position
+    )
 
     i, j = _get_axes(view)
 
-    ax.plot(
-        outline[:, i],
-        outline[:, j],
-        color=color,
+    ax.text(
+        center[i],
+        center[j],
+
+        element.name,
+
+        fontsize=8,
+
+        ha="center",
+
+        zorder=30,
     )
 
     return ax
 
+def plot_volume_element(
+    element,
+    view,
+    ax,
+    color,
+):
+    """
+    Draw a rectangular glass volume.
+    """
+
+    vertices = (
+        element.get_volume_vertices()
+    )
+
+    i, j = _get_axes(view)
+
+    #
+    # Front / back faces
+    #
+
+    front = [0,1,2,3,0]
+    back  = [4,5,6,7,4]
+
+    ax.fill(
+        vertices[front, i],
+        vertices[front, j],
+
+        color=color,
+
+        alpha=0.15,
+
+        zorder=5,
+    )
+
+    ax.fill(
+        vertices[back, i],
+        vertices[back, j],
+
+        color=color,
+
+        alpha=0.15,
+
+        zorder=5,
+    )
+
+    ax.plot(
+        vertices[front, i],
+        vertices[front, j],
+
+        color=color,
+
+        linewidth=2,
+
+        zorder=20,
+    )
+
+    ax.plot(
+        vertices[back, i],
+        vertices[back, j],
+
+        color=color,
+
+        linewidth=2,
+
+        zorder=20,
+    )
+
+    #
+    # Connecting edges
+    #
+
+    edges = [
+        (0,4),
+        (1,5),
+        (2,6),
+        (3,7),
+    ]
+
+    for a,b in edges:
+
+        ax.plot(
+            [
+                vertices[a, i],
+                vertices[b, i],
+            ],
+            [
+                vertices[a, j],
+                vertices[b, j],
+            ],
+
+            color=color,
+
+            linewidth=1,
+
+            alpha=0.7,
+
+            zorder=10,
+        )
 
 def plot_system(
     tracer,

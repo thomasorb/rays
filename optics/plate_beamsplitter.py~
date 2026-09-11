@@ -1,0 +1,109 @@
+from __future__ import annotations
+
+import numpy as np
+
+from .beamsplitter import BeamSplitter
+from .window import Window
+
+
+class PlateBeamSplitter:
+    """
+    Composite beam splitter.
+
+    Consists of:
+
+        - infinitesimally thin
+          semi-reflective coating
+
+        - glass plate behind it
+    """
+
+    def __init__(
+        self,
+        position,
+        rotation,
+
+        thickness,
+
+        material,
+
+        width,
+        height,
+
+        R=0.5,
+        T=0.5,
+
+        max_generation_depth=2,
+
+        name="BS",
+    ):
+
+        self.name = name
+
+        #
+        # Coating
+        #
+
+        self.coating = BeamSplitter(
+            name=name,
+
+            position=position,
+
+            rotation=rotation,
+
+            width=width,
+            height=height,
+
+            R=R,
+            T=T,
+
+            max_generation_depth=
+                max_generation_depth,
+        )
+
+        #
+        # Glass plate
+        #
+
+        normal = (
+            self.coating.normal
+        )
+
+        glass_position = (
+            np.asarray(
+                position,
+                dtype=float,
+            )
+            +
+            0.5
+            * thickness
+            * normal
+        )
+
+        self.glass = Window(
+            name=name + "_GLASS",
+
+            position=glass_position,
+
+            rotation=rotation,
+
+            width=width,
+            height=height,
+
+            thickness=thickness,
+
+            material=material,
+        )
+
+    def add_to_system(
+        self,
+        system,
+    ):
+
+        system.add_element(
+            self.coating
+        )
+
+        system.add_element(
+            self.glass
+        )

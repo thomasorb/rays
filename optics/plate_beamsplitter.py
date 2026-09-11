@@ -12,12 +12,12 @@ from .optical_interface import (
 
 from materials.air import AIR
 
-class Window:
+class PlateBeamSplitter:
     """
-    Plane-parallel plate.
+    Plate beam splitter.
 
-    The position corresponds
-    to the front surface.
+    Position corresponds to the
+    semi-reflective coating.
     """
 
     def __init__(
@@ -35,8 +35,8 @@ class Window:
 
         material,
 
-        front_R=0.0,
-        front_T=1.0,
+        R=0.5,
+        T=0.5,
 
         back_R=0.0,
         back_T=1.0,
@@ -55,13 +55,10 @@ class Window:
             thickness
         )
 
-        self.width = width
-        self.height = height
-
         self.material = material
 
         #
-        # Front interface
+        # Semi-reflective coating
         #
 
         self.front = OpticalInterface(
@@ -78,12 +75,12 @@ class Window:
             material1=AIR,
             material2=material,
 
-            R=front_R,
-            T=front_T,
+            R=R,
+            T=T,
         )
 
         #
-        # Back interface
+        # Rear interface
         #
 
         normal = (

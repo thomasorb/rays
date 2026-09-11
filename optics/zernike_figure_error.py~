@@ -1,0 +1,128 @@
+from __future__ import annotations
+
+import numpy as np
+
+from .wavefront_error import (
+    WavefrontError
+)
+
+
+class ZernikeFigureError(
+    WavefrontError
+):
+
+    def __init__(
+        self,
+        pupil_radius,
+        rms_opd,
+        seed=None,
+    ):
+
+        self.pupil_radius = (
+            pupil_radius
+        )
+
+        self.rms_opd = (
+            rms_opd
+        )
+
+        self.rng = np.random.default_rng(
+            seed
+        )
+
+        self.coeffs = None
+
+        self.randomize()
+
+    # -------------------------------------
+
+    def randomize(
+        self,
+    ):
+
+        #
+        # Z2 Z3 Z4 Z5 Z6
+        #
+
+        coeffs = self.rng.normal(
+            size=5
+        )
+
+        coeffs -= np.mean(coeffs)
+
+        norm = np.sqrt(
+            np.mean(
+                coeffs**2
+            )
+        )
+
+        coeffs /= norm
+
+        coeffs *= self.rms_opd
+
+        self.coeffs = coeffs
+
+    # -------------------------------------
+
+    def opd(
+        self,
+        x,
+        y,
+    ):
+
+        r = (
+            np.sqrt(
+                x*x + y*y
+            )
+            / self.pupil_radius
+        )
+
+        if r > 1:
+            return 0.0
+
+        theta = np.arctan2(
+            y,
+            x,
+        )
+
+        #
+        # Low-order Zernikes.
+        #
+
+        Z2 = (
+            r*np.cos(theta)
+        )
+
+        Z3 = (
+            r*np.sin(theta)
+        )
+
+        Z4 = (
+            2*r*r - 1
+        )
+
+        Z5 = (
+            r*r
+            * np.cos(
+                2*theta
+            )
+        )
+
+        Z6 = (
+            r*r
+            * np.sin(
+                2*theta
+            )
+        )
+
+        c2,c3,c4,c5,c6 = (
+            self.coeffs
+        )
+
+        return (
+            c2*Z2
+            + c3*Z3
+            + c4*Z4
+            + c5*Z5
+            + c6*Z6
+        )

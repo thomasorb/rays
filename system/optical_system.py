@@ -4,6 +4,8 @@ from tracing.tracer import Tracer
 from tracing.ray import Ray
 from tracing.ray_bundle import RayBundle
 
+import numpy as np
+
 class OpticalSystem:
     """
     High-level optical system container.
@@ -33,7 +35,7 @@ class OpticalSystem:
         self.source = None
 
         self.last_rays = []
-
+        
     # ==================================================
     # Source management
     # ==================================================
@@ -343,3 +345,4 @@ class OpticalSystem:
             np.asarray(det1),
             np.asarray(det2),
         )
+

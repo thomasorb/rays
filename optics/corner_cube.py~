@@ -1,0 +1,182 @@
+from __future__ import annotations
+
+import numpy as np
+
+from scipy.spatial.transform import Rotation
+
+from .mirror import Mirror
+
+
+class CornerCube:
+    """
+    Ideal corner cube.
+
+    Built from 3 orthogonal mirrors.
+
+    Position corresponds to the cube vertex.
+    """
+
+    def __init__(
+        self,
+        name,
+        position,
+        rotation=Rotation.identity(),
+        size=10.0,
+    ):
+
+        self.name = name
+
+        self.position = np.asarray(
+            position,
+            dtype=float,
+        )
+
+        self.rotation = rotation
+
+        self.size = float(size)
+
+        #
+        # Local normals
+        #
+
+        n1 = np.array([1,0,0])
+        n2 = np.array([0,1,0])
+        n3 = np.array([0,0,1])
+
+        #
+        # Mirror centers
+        #
+
+        p1 = np.array([
+            size/2,
+            0,
+            0,
+        ])
+
+        p2 = np.array([
+            0,
+            size/2,
+            0,
+        ])
+
+        p3 = np.array([
+            0,
+            0,
+            size/2,
+        ])
+
+        #
+        # Transform into world coordinates
+        #
+
+        p1 = (
+            rotation.apply(p1)
+            + self.position
+        )
+
+        p2 = (
+            rotation.apply(p2)
+            + self.position
+        )
+
+        p3 = (
+            rotation.apply(p3)
+            + self.position
+        )
+
+        #
+        # Mirror orientations
+        #
+
+        rot1 = rotation * Rotation.from_euler(
+            "y",
+            90,
+            degrees=True,
+        )
+
+        rot2 = rotation * Rotation.from_euler(
+            "x",
+            -90,
+            degrees=True,
+        )
+
+        rot3 = rotation
+
+        #
+        # M1
+        #
+
+        self.m1 = Mirror(
+
+            name=name + ".M1",
+
+            position=p1,
+
+            rotation=rot1,
+
+            width=size,
+            height=size,
+        )
+
+        #
+        # M2
+        #
+
+        self.m2 = Mirror(
+
+            name=name + ".M2",
+
+            position=p2,
+
+            rotation=rot2,
+
+            width=size,
+            height=size,
+        )
+
+        #
+        # M3
+        #
+
+        self.m3 = Mirror(
+
+            name=name + ".M3",
+
+            position=p3,
+
+            rotation=rot3,
+
+            width=size,
+            height=size,
+        )
+
+    # --------------------------------------------------
+
+    def add_to_system(
+        self,
+        system,
+    ):
+
+        system.add_element(
+            self.m1
+        )
+
+        system.add_element(
+            self.m2
+        )
+
+        system.add_element(
+            self.m3
+        )
+
+    # --------------------------------------------------
+
+    @property
+    def mirrors(
+        self,
+    ):
+        return [
+            self.m1,
+            self.m2,
+            self.m3,
+        ]

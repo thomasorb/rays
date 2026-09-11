@@ -1,0 +1,333 @@
+from __future__ import annotations
+
+import numpy as np
+
+from scipy.spatial.transform import Rotation
+
+from system.optical_system import OpticalSystem
+
+from optics.mirror import Mirror
+from optics.compensator import Compensator
+from optics.plate_beamsplitter import PlateBeamSplitter
+from optics.detector import Detector
+
+from materials.air import AIR
+
+
+class ClassicMichelson:
+    """
+    Classical compensated Michelson interferometer.
+
+    Geometry:
+
+                     M1
+                     |
+                     |
+                     |
+              Compensator
+
+                     |
+                     |
+
+    Source ---- BS -------- M2
+
+    BS is located at the origin.
+
+    M2 is the movable mirror.
+    """
+
+    def __init__(
+        self,
+
+        arm_length,
+
+        compensator_distance,
+
+        mirror_size,
+
+        plate_size,
+
+        plate_thickness,
+
+        material,
+
+        detector_distance=50,
+    ):
+
+        self.arm_length = float(
+            arm_length
+        )
+
+        self.compensator_distance = float(
+            compensator_distance
+        )
+
+        self.detector_distance = float(
+            detector_distance
+        )
+
+        self.system = OpticalSystem()
+
+        # ==================================================
+        # BEAMSPLITTER
+        # ==================================================
+
+        self.bs = PlateBeamSplitter(
+
+            name="BS",
+
+            position=[0,0,0],
+
+            rotation=Rotation.from_euler(
+                "y",
+                135,
+                degrees=True,
+            ),
+
+            thickness=plate_thickness,
+
+            width=plate_size,
+            height=plate_size,
+
+            material=material,
+
+            R=0.5,
+            T=0.5,
+        )
+
+        self.bs.add_to_system(
+            self.system
+        )
+
+        # ==================================================
+        # COMPENSATOR
+        # ==================================================
+
+        self.compensator = Compensator(
+
+            name="COMP",
+
+            position=[
+                0,
+                0,
+                compensator_distance,
+            ],
+
+            rotation=Rotation.from_euler(
+                "y",
+                135,
+                degrees=True,
+            ),
+
+            thickness=plate_thickness,
+
+            width=plate_size,
+            height=plate_size,
+
+            material=material,
+        )
+
+        self.compensator.add_to_system(
+            self.system
+        )
+
+        # ==================================================
+        # FIXED MIRROR
+        # ==================================================
+
+        self.mirror1 = Mirror(
+
+            name="M1",
+
+            position=[
+                0,
+                0,
+                arm_length,
+            ],
+
+            rotation=Rotation.identity(),
+
+            width=mirror_size,
+            height=mirror_size,
+        )
+
+        self.system.add_element(
+            self.mirror1
+        )
+
+        # ==================================================
+        # MOVABLE MIRROR
+        # ==================================================
+
+        self.mirror2 = Mirror(
+
+            name="M2",
+
+            position=[
+                arm_length,
+                0,
+                0,
+            ],
+
+            rotation=Rotation.from_euler(
+                "y",
+                -90,
+                degrees=True,
+            ),
+
+            width=mirror_size,
+            height=mirror_size,
+        )
+
+        self.system.add_element(
+            self.mirror2
+        )
+
+        # ==================================================
+        # DETECTOR PORT 1
+        # ==================================================
+
+        self.detector1 = Detector(
+
+            name="DET1",
+
+            position=[
+                -detector_distance,
+                0,
+                0,
+            ],
+
+            rotation=Rotation.from_euler(
+                "y",
+                -90,
+                degrees=True,
+            ),
+
+            width=mirror_size,
+            height=mirror_size,
+        )
+
+        self.system.add_detector(
+            self.detector1
+        )
+
+        # ==================================================
+        # DETECTOR PORT 2
+        # ==================================================
+
+        self.detector2 = Detector(
+
+            name="DET2",
+
+            position=[
+                0,
+                0,
+                -detector_distance,
+            ],
+
+            rotation=Rotation.identity(),
+
+            width=mirror_size,
+            height=mirror_size,
+        )
+
+        self.system.add_detector(
+            self.detector2
+        )
+
+        # ==================================================
+        # STORE ZPD POSITION
+        # ==================================================
+
+        self.zpd_position = (
+            self.mirror2.transform.position.copy()
+        )
+
+    # ======================================================
+    # SOURCE
+    # ======================================================
+
+    def set_source(
+        self,
+        source,
+    ):
+
+        self.source = source
+
+        self.system.set_source(
+            source
+        )
+
+    # ======================================================
+    # MIRROR SCAN
+    # ======================================================
+
+    def move_mirror(
+        self,
+        displacement,
+    ):
+        """
+        Move M2 along the arm axis.
+
+        displacement:
+            physical mirror translation
+
+        OPD = 2 * displacement
+        """
+
+        self.mirror2.transform.position = (
+            self.zpd_position
+            +
+            np.array(
+                [displacement,0,0]
+            )
+        )
+
+    # ------------------------------------------------------
+
+    def reset_zpd(
+        self,
+    ):
+
+        self.mirror2.transform.position = (
+            self.zpd_position.copy()
+        )
+
+    # ======================================================
+    # TRACE
+    # ======================================================
+
+    def trace(
+        self,
+    ):
+        return self.system.trace()
+
+    # ======================================================
+    # REPORT
+    # ======================================================
+
+    def report(
+        self,
+    ):
+
+        print()
+        print("================================")
+        print("CLASSIC MICHELSON")
+        print("================================")
+
+        print()
+
+        print(
+            "Arm length:",
+            self.arm_length
+        )
+
+        print(
+            "Compensator distance:",
+            self.compensator_distance
+        )
+
+        print(
+            "M2 position:",
+            self.mirror2.transform.position
+        )
