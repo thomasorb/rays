@@ -1653,6 +1653,8 @@ class OpticalEditorApp:
             self._validate_component(
                 spec
             )
+            self._clear_rays()
+            self._rebuild_system()
 
         except Exception as exc:
             self.model.components[
@@ -1660,15 +1662,13 @@ class OpticalEditorApp:
             ] = ComponentSpec.from_dict(
                 old_state
             )
+            self._rebuild_system()
             self._show_component_panel()
             messagebox.showerror(
                 "Invalid component parameters",
                 f"Invalid component parameters: {exc}",
             )
             return
-
-        self._clear_rays()
-        self._rebuild_system()
         self._render_scene()
         self._show_component_panel()
 
@@ -1714,13 +1714,14 @@ class OpticalEditorApp:
                     "n_rays"
                 ].get()
             )
-
-            self.model.build_source()
+            self._clear_rays()
+            self._rebuild_system()
 
         except Exception as exc:
             self.model.source = SourceSpec(
                 **old_state
             )
+            self._rebuild_system()
             self._show_trace_panel()
             messagebox.showerror(
                 "Invalid trace settings",
@@ -1728,8 +1729,6 @@ class OpticalEditorApp:
             )
             return False
 
-        self._clear_rays()
-        self._rebuild_system()
         self._render_scene()
         return True
 
@@ -2042,11 +2041,22 @@ class OpticalEditorApp:
         spec = self.model.add_component(
             self.add_type_var.get()
         )
-        self.selected_index = (
-            len(self.model.components) - 1
-        )
-        self._clear_rays()
-        self._rebuild_system()
+        new_index = len(self.model.components) - 1
+
+        try:
+            self.selected_index = new_index
+            self._clear_rays()
+            self._rebuild_system()
+        except Exception as exc:
+            self.model.components.pop()
+            self.selected_index = None
+            self._rebuild_system()
+            messagebox.showerror(
+                "Invalid component parameters",
+                f"Invalid component parameters: {exc}",
+            )
+            return
+
         self._show_component_panel()
         self._render_scene()
         self._log(
@@ -2059,12 +2069,28 @@ class OpticalEditorApp:
         if self.selected_index is None:
             return
 
+        removed_index = self.selected_index
         removed = self.model.components.pop(
             self.selected_index
         )
         self.selected_index = None
-        self._clear_rays()
-        self._rebuild_system()
+
+        try:
+            self._clear_rays()
+            self._rebuild_system()
+        except Exception as exc:
+            self.model.components.insert(
+                removed_index,
+                removed,
+            )
+            self.selected_index = removed_index
+            self._rebuild_system()
+            messagebox.showerror(
+                "Invalid component removal",
+                f"Invalid component removal: {exc}",
+            )
+            return
+
         self._show_component_panel()
         self._render_scene()
         self._log(
@@ -2428,6 +2454,9 @@ class OpticalEditorApp:
         ]
 
         if self.drag_state["mode"] == "move":
+            previous_position = list(
+                spec.position
+            )
             start_position = list(
                 self.drag_state[
                     "start_position"
@@ -2447,6 +2476,9 @@ class OpticalEditorApp:
             )
             spec.position = start_position
         else:
+            previous_rotation = list(
+                spec.rotation_deg
+            )
             axis = _screen_rotation_axis(
                 self.current_view
             )
@@ -2467,7 +2499,18 @@ class OpticalEditorApp:
             spec.rotation_deg = rotation
 
         self._clear_rays()
-        self._rebuild_system()
+        try:
+            self._rebuild_system()
+        except Exception as exc:
+            if self.drag_state["mode"] == "move":
+                spec.position = previous_position
+            else:
+                spec.rotation_deg = previous_rotation
+            self._rebuild_system()
+            self._log(
+                f"Drag update rejected: {exc}"
+            )
+            return
         if self.panel_mode == "component":
             self._update_component_vars_from_spec(
                 spec
