@@ -487,56 +487,62 @@ class OpticalArchitectureModel:
             return
 
         if spec.component_type == "Window":
-            Window(
-                name=spec.name,
-                position=spec.position,
-                rotation=rotation,
-                thickness=spec.thickness,
-                width=spec.width,
-                height=spec.height,
-                material=_build_material(
-                    spec.material,
-                    spec.material_n,
-                ),
+            self._build_thick_component(
+                spec,
+                rotation,
+                Window,
             ).add_to_system(system)
             return
 
         if spec.component_type == "Compensator":
-            Compensator(
-                name=spec.name,
-                position=spec.position,
-                rotation=rotation,
-                thickness=spec.thickness,
-                width=spec.width,
-                height=spec.height,
-                material=_build_material(
-                    spec.material,
-                    spec.material_n,
-                ),
+            self._build_thick_component(
+                spec,
+                rotation,
+                Compensator,
             ).add_to_system(system)
             return
 
         if spec.component_type == "PlateBeamSplitter":
-            PlateBeamSplitter(
-                name=spec.name,
-                position=spec.position,
-                rotation=rotation,
-                thickness=spec.thickness,
-                width=spec.width,
-                height=spec.height,
-                material=_build_material(
-                    spec.material,
-                    spec.material_n,
-                ),
-                R=spec.R,
-                T=spec.T,
-                back_R=spec.back_R,
-                back_T=spec.back_T,
+            self._build_thick_component(
+                spec,
+                rotation,
+                PlateBeamSplitter,
             ).add_to_system(system)
             return
 
         raise ValueError(
             f"Unsupported component type: {spec.component_type}"
+        )
+
+    def _build_thick_component(
+        self,
+        spec: ComponentSpec,
+        rotation: Rotation,
+        component_class,
+    ):
+        kwargs = dict(
+            name=spec.name,
+            position=spec.position,
+            rotation=rotation,
+            thickness=spec.thickness,
+            width=spec.width,
+            height=spec.height,
+            material=_build_material(
+                spec.material,
+                spec.material_n,
+            ),
+        )
+
+        if component_class is PlateBeamSplitter:
+            kwargs.update(
+                R=spec.R,
+                T=spec.T,
+                back_R=spec.back_R,
+                back_T=spec.back_T,
+            )
+
+        return component_class(
+            **kwargs
         )
 
 
@@ -1621,8 +1627,8 @@ class OpticalEditorApp:
             )
             self._show_component_panel()
             messagebox.showerror(
-                "Invalid value",
-                str(exc),
+                "Invalid component parameters",
+                f"Invalid component parameters: {exc}",
             )
             return
 
@@ -1682,8 +1688,8 @@ class OpticalEditorApp:
             )
             self._show_trace_panel()
             messagebox.showerror(
-                "Invalid value",
-                str(exc),
+                "Invalid trace settings",
+                f"Invalid trace settings: {exc}",
             )
             return False
 
@@ -1716,9 +1722,14 @@ class OpticalEditorApp:
             )
 
         if spec.component_type == "OpticalInterface":
-            if spec.R < 0 or spec.T < 0:
+            if (
+                spec.R < 0
+                or spec.R > 1
+                or spec.T < 0
+                or spec.T > 1
+            ):
                 raise ValueError(
-                    "R and T must be non-negative."
+                    "R and T must be between 0 and 1."
                 )
 
         if spec.component_type == "PlateBeamSplitter":
@@ -1728,9 +1739,9 @@ class OpticalEditorApp:
                 spec.back_R,
                 spec.back_T,
             ]:
-                if value < 0:
+                if value < 0 or value > 1:
                     raise ValueError(
-                        "Beam splitter coefficients must be non-negative."
+                        "Beam splitter coefficients must be between 0 and 1."
                     )
 
     def _rebuild_system(
@@ -1822,6 +1833,25 @@ class OpticalEditorApp:
             maximum,
             points,
         )
+        available_detectors = {
+            detector.name
+            for detector in self.system.detectors
+        }
+        missing_detectors = [
+            name
+            for name in [
+                detector_1_name,
+                detector_2_name,
+            ]
+            if name not in available_detectors
+        ]
+
+        if missing_detectors:
+            messagebox.showerror(
+                "Error",
+                "Selected detectors are not available in the current architecture.",
+            )
+            return
 
         original_position = list(
             component.position
@@ -1932,6 +1962,15 @@ class OpticalEditorApp:
         )
         canvas.draw_idle()
 
+        def on_close():
+            figure.clear()
+            window.destroy()
+
+        window.protocol(
+            "WM_DELETE_WINDOW",
+            on_close,
+        )
+
     def _set_view(
         self,
         view: str,
@@ -2020,6 +2059,9 @@ class OpticalEditorApp:
                 path
             )
             self.selected_index = None
+            self.move_component_var.set("")
+            self.move_detector_1_var.set("")
+            self.move_detector_2_var.set("")
             self._clear_rays()
             self._rebuild_system()
             self._show_component_panel()
@@ -2033,6 +2075,7 @@ class OpticalEditorApp:
                 f"Architecture loaded from {path}."
             ),
         )
+
     def _find_component_by_name(
         self,
         name: str,
@@ -2343,15 +2386,15 @@ class OpticalEditorApp:
             dy = event.ydata - self.drag_state[
                 "start_xy"
             ][1]
-            start_position[i] = round(
+            start_position[i] = _snap_drag_coordinate(
                 start_position[i] + dx
             )
-            start_position[j] = round(
+            start_position[j] = _snap_drag_coordinate(
                 start_position[j] + dy
             )
             spec.position = start_position
         else:
-            axis = _view_normal_axis(
+            axis = _screen_rotation_axis(
                 self.current_view
             )
             delta = (
@@ -2405,13 +2448,18 @@ class OpticalEditorApp:
 
         new_width = (x_max - x_min) * scale
         new_height = (y_max - y_min) * scale
+        width = x_max - x_min
+        height = y_max - y_min
+
+        if width == 0 or height == 0:
+            return
 
         x_ratio = (
             event.xdata - x_min
-        ) / (x_max - x_min)
+        ) / width
         y_ratio = (
             event.ydata - y_min
-        ) / (y_max - y_min)
+        ) / height
 
         self.axes.set_xlim(
             event.xdata - new_width * x_ratio,
@@ -2630,24 +2678,13 @@ def _component_projection(
     i, j = VIEW_MAP[view]
 
     if spec.component_type in THICK_COMPONENTS:
-        front = _local_rectangle(
+        front_world, back_world = _thick_component_faces(
+            position,
+            rotation,
             spec.width,
             spec.height,
-            z=0.0,
+            spec.thickness,
         )
-        back = _local_rectangle(
-            spec.width,
-            spec.height,
-            z=spec.thickness,
-        )
-        front_world = np.array([
-            rotation.apply(point) + position
-            for point in front
-        ])
-        back_world = np.array([
-            rotation.apply(point) + position
-            for point in back
-        ])
         center = (
             position
             + rotation.apply(
@@ -2836,7 +2873,7 @@ def _project_vector(
     )
 
 
-def _view_normal_axis(
+def _screen_rotation_axis(
     view: str,
 ) -> int:
     axes = set(
@@ -2848,6 +2885,44 @@ def _view_normal_axis(
     raise ValueError(
         f"Invalid view: {view}"
     )
+
+
+def _snap_drag_coordinate(
+    value: float,
+) -> float:
+    return float(
+        np.round(value)
+    )
+
+
+def _thick_component_faces(
+    front_position: np.ndarray,
+    rotation: Rotation,
+    width: float,
+    height: float,
+    thickness: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    front = _local_rectangle(
+        width,
+        height,
+        z=0.0,
+    )
+    back = _local_rectangle(
+        width,
+        height,
+        z=thickness,
+    )
+
+    front_world = np.array([
+        rotation.apply(point) + front_position
+        for point in front
+    ])
+    back_world = np.array([
+        rotation.apply(point) + front_position
+        for point in back
+    ])
+
+    return front_world, back_world
 
 
 def launch_optical_editor(
