@@ -1092,6 +1092,34 @@ class OpticalEditorApp:
             pady=(10, 0),
         )
 
+    def _refresh_move_ranges(
+        self,
+    ):
+        if self.panel_mode != "move":
+            return
+
+        spec = self._find_component_by_name(
+            self.move_component_var.get()
+        )
+        if spec is None:
+            return
+
+        axis_index = AXIS_INDEX[
+            self.move_axis_var.get()
+        ]
+        center_value = float(
+            spec.position[axis_index]
+        )
+
+        if "minimum" in self.move_vars:
+            self.move_vars["minimum"].set(
+                center_value - 1.0
+            )
+        if "maximum" in self.move_vars:
+            self.move_vars["maximum"].set(
+                center_value + 1.0
+            )
+
     def _show_trace_panel(
         self,
     ):
@@ -1269,6 +1297,7 @@ class OpticalEditorApp:
             self.move_component_var,
             names,
             row,
+            callback=self._refresh_move_ranges,
         )
         row += 1
 
@@ -1277,6 +1306,7 @@ class OpticalEditorApp:
             self.move_axis_var,
             AXIS_NAMES,
             row,
+            callback=self._refresh_move_ranges,
         )
         row += 1
 
@@ -1500,6 +1530,7 @@ class OpticalEditorApp:
         variable: tk.Variable,
         values: list[str],
         row: int,
+        callback=None,
     ):
         ttk.Label(
             self.panel_body,
@@ -1525,7 +1556,11 @@ class OpticalEditorApp:
         )
         combobox.bind(
             "<<ComboboxSelected>>",
-            lambda _event: self._apply_active_panel(),
+            lambda _event: (
+                callback()
+                if callback is not None
+                else self._apply_active_panel()
+            ),
         )
 
     def _apply_active_panel(
@@ -1818,6 +1853,13 @@ class OpticalEditorApp:
             )
             return
 
+        if minimum > maximum:
+            messagebox.showerror(
+                "Error",
+                "Min position must be less than or equal to max position.",
+            )
+            return
+
         detector_1_name = self.move_detector_1_var.get()
         detector_2_name = self.move_detector_2_var.get()
 
@@ -1861,24 +1903,29 @@ class OpticalEditorApp:
             detector_1_values = []
             detector_2_values = []
 
-            for value in positions:
-                component.position[axis_index] = float(
-                    value
-                )
-                system = self.model.build_system()
-                system.trace()
-                detector_1 = system.detector_by_name(
-                    detector_1_name
-                )
-                detector_2 = system.detector_by_name(
-                    detector_2_name
-                )
+            try:
+                for value in positions:
+                    component.position[axis_index] = float(
+                        value
+                    )
+                    system = self.model.build_system()
+                    system.trace()
+                    detector_1 = system.detector_by_name(
+                        detector_1_name
+                    )
+                    detector_2 = system.detector_by_name(
+                        detector_2_name
+                    )
 
-                detector_1_values.append(
-                    detector_1.intensity
-                )
-                detector_2_values.append(
-                    detector_2.intensity
+                    detector_1_values.append(
+                        detector_1.intensity
+                    )
+                    detector_2_values.append(
+                        detector_2.intensity
+                    )
+            finally:
+                component.position = list(
+                    original_position
                 )
 
             return (
@@ -1886,15 +1933,19 @@ class OpticalEditorApp:
                 np.asarray(detector_2_values),
             )
 
-        result = self._run_logged(
-            action,
-            success_message="Move scan completed.",
-        )
-
-        component.position = original_position
-        self._clear_rays()
-        self._rebuild_system()
-        self._render_scene()
+        result = None
+        try:
+            result = self._run_logged(
+                action,
+                success_message="Move scan completed.",
+            )
+        finally:
+            component.position = list(
+                original_position
+            )
+            self._clear_rays()
+            self._rebuild_system()
+            self._render_scene()
 
         if result is None:
             return
@@ -2055,9 +2106,11 @@ class OpticalEditorApp:
             return
 
         def action():
-            self.model = OpticalArchitectureModel.load_json(
+            model = OpticalArchitectureModel.load_json(
                 path
             )
+            model.build_system()
+            self.model = model
             self.selected_index = None
             self.move_component_var.set("")
             self.move_detector_1_var.set("")
