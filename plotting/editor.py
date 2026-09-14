@@ -1519,10 +1519,6 @@ class OpticalEditorApp:
             "<Return>",
             lambda _event: self._apply_active_panel(),
         )
-        entry.bind(
-            "<FocusOut>",
-            lambda _event: self._apply_active_panel(),
-        )
 
     def _add_combobox(
         self,
@@ -1765,18 +1761,30 @@ class OpticalEditorApp:
                 raise ValueError(
                     "R and T must be between 0 and 1."
                 )
+            if spec.R + spec.T > 1:
+                raise ValueError(
+                    "Optical interface requires R + T <= 1."
+                )
 
         if spec.component_type == "PlateBeamSplitter":
-            for value in [
-                spec.R,
-                spec.T,
-                spec.back_R,
-                spec.back_T,
-            ]:
+            for key, value in {
+                "front_R": spec.R,
+                "front_T": spec.T,
+                "back_R": spec.back_R,
+                "back_T": spec.back_T,
+            }.items():
                 if value < 0 or value > 1:
                     raise ValueError(
-                        "Beam splitter coefficients must be between 0 and 1."
+                        f"{key} must be between 0 and 1."
                     )
+            if spec.R + spec.T > 1:
+                raise ValueError(
+                    "Front surface requires R + T <= 1."
+                )
+            if spec.back_R + spec.back_T > 1:
+                raise ValueError(
+                    "Back surface requires R + T <= 1."
+                )
 
     def _rebuild_system(
         self,
