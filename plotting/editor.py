@@ -5,14 +5,27 @@ import json
 from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+import warnings
 
 import numpy as np
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.path import Path as MplPath
 from scipy.spatial.transform import Rotation
+
+try:
+    import tkinter as tk
+    from tkinter import filedialog, messagebox, ttk
+    from matplotlib.backends.backend_tkagg import (
+        FigureCanvasTkAgg,
+    )
+    TK_IMPORT_ERROR = None
+except ModuleNotFoundError as exc:
+    tk = None
+    ttk = None
+    filedialog = None
+    messagebox = None
+    FigureCanvasTkAgg = None
+    TK_IMPORT_ERROR = exc
 
 from architectures.classic_michelson import ClassicMichelson
 from materials.air import AIR
@@ -533,6 +546,11 @@ class OpticalEditorApp:
         root: tk.Tk,
         model: OpticalArchitectureModel | None = None,
     ):
+        if TK_IMPORT_ERROR is not None:
+            raise RuntimeError(
+                "tkinter is required to use the optical editor."
+            ) from TK_IMPORT_ERROR
+
         self.root = root
         self.model = (
             model
@@ -2455,10 +2473,15 @@ def _rotation_from_degrees(
 def _rotation_to_euler(
     rotation: Rotation,
 ) -> list[float]:
-    return rotation.as_euler(
-        "xyz",
-        degrees=True,
-    ).tolist()
+    with warnings.catch_warnings():
+        warnings.simplefilter(
+            "ignore",
+            UserWarning,
+        )
+        return rotation.as_euler(
+            "xyz",
+            degrees=True,
+        ).tolist()
 
 
 def _normalized_vector(
@@ -2738,10 +2761,14 @@ def _view_normal_axis(
 def launch_optical_editor(
     model: OpticalArchitectureModel | None = None,
 ):
+    if TK_IMPORT_ERROR is not None:
+        raise RuntimeError(
+            "tkinter is required to launch the optical editor."
+        ) from TK_IMPORT_ERROR
+
     root = tk.Tk()
     OpticalEditorApp(
         root=root,
         model=model,
     )
     root.mainloop()
-
