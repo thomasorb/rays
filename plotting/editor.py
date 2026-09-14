@@ -1905,6 +1905,7 @@ class OpticalEditorApp:
         original_position = list(
             component.position
         )
+        had_rays = self.current_rays is not None
 
         def action():
             detector_1_values = []
@@ -1950,8 +1951,11 @@ class OpticalEditorApp:
             component.position = list(
                 original_position
             )
-            self._clear_rays()
             self._rebuild_system()
+            if had_rays:
+                self.current_rays = self.system.trace()
+            else:
+                self._clear_rays()
             self._render_scene()
 
         if result is None:
@@ -1964,6 +1968,8 @@ class OpticalEditorApp:
             positions,
             detector_1,
             detector_2,
+            detector_1_name,
+            detector_2_name,
         )
 
     def _show_move_result_window(
@@ -1973,6 +1979,8 @@ class OpticalEditorApp:
         positions: np.ndarray,
         detector_1: np.ndarray,
         detector_2: np.ndarray,
+        detector_1_name: str,
+        detector_2_name: str,
     ):
         window = tk.Toplevel(
             self.root
@@ -1994,12 +2002,12 @@ class OpticalEditorApp:
         ax.plot(
             positions,
             detector_1,
-            label="Detector 1",
+            label=detector_1_name,
         )
         ax.plot(
             positions,
             detector_2,
-            label="Detector 2",
+            label=detector_2_name,
         )
         ax.set_xlabel(
             f"{component_name} {axis_name.upper()} position [mm]"

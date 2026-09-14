@@ -115,7 +115,41 @@ class OpticalEditorModelTests(
             system.detector_by_name("DET10")
         )
 
+    def test_add_component_sets_expected_defaults(
+        self,
+    ):
+        model = OpticalArchitectureModel(
+            components=[],
+            source=SourceSpec(),
+        )
+
+        detector = model.add_component(
+            "Detector"
+        )
+        interface = model.add_component(
+            "OpticalInterface"
+        )
+        splitter = model.add_component(
+            "PlateBeamSplitter"
+        )
+
+        self.assertEqual(
+            detector.rotation_deg,
+            [0.0, -90.0, 0.0],
+        )
+        self.assertEqual(
+            interface.material2,
+            "BK7",
+        )
+        self.assertEqual(
+            splitter.rotation_deg,
+            [0.0, 135.0, 0.0],
+        )
+        self.assertEqual(
+            splitter.R + splitter.T,
+            1.0,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
-
