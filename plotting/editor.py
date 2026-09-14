@@ -574,6 +574,8 @@ class OpticalEditorApp:
         self.move_axis_var = tk.StringVar(
             value="x"
         )
+        self.move_detector_1_var = tk.StringVar()
+        self.move_detector_2_var = tk.StringVar()
 
         self.root.title(
             "Optical System Editor"
@@ -1046,25 +1048,21 @@ class OpticalEditorApp:
             )
             row += 1
 
-            if value == "Custom":
-                default_n = getattr(
-                    spec,
-                    f"{key}_n",
-                    1.5,
-                )
-            else:
-                default_n = getattr(
-                    spec,
-                    f"{key}_n",
-                    1.5,
-                )
-
             numeric_key = (
                 f"{key}_n"
             )
             if hasattr(spec, numeric_key):
                 numeric_var = tk.DoubleVar(
-                    value=float(default_n)
+                    value=float(
+                        _material_refractive_index(
+                            value,
+                            getattr(
+                                spec,
+                                numeric_key,
+                                1.5,
+                            ),
+                        )
+                    )
                 )
                 self.component_vars[
                     numeric_key
@@ -1272,6 +1270,49 @@ class OpticalEditorApp:
             "Axis",
             self.move_axis_var,
             AXIS_NAMES,
+            row,
+        )
+        row += 1
+
+        detector_names = [
+            component.name
+            for component in self.model.components
+            if component.component_type == "Detector"
+        ]
+
+        if detector_names:
+            if (
+                self.move_detector_1_var.get()
+                not in detector_names
+            ):
+                self.move_detector_1_var.set(
+                    detector_names[0]
+                )
+            if (
+                self.move_detector_2_var.get()
+                not in detector_names
+            ):
+                default_name = (
+                    detector_names[1]
+                    if len(detector_names) > 1
+                    else detector_names[0]
+                )
+                self.move_detector_2_var.set(
+                    default_name
+                )
+
+        self._add_combobox(
+            "Detector 1",
+            self.move_detector_1_var,
+            detector_names,
+            row,
+        )
+        row += 1
+
+        self._add_combobox(
+            "Detector 2",
+            self.move_detector_2_var,
+            detector_names,
             row,
         )
         row += 1
@@ -1541,23 +1582,31 @@ class OpticalEditorApp:
             for key, _, _ in self._component_material_fields(
                 spec
             ):
+                material_name = self.component_vars[
+                    key
+                ].get()
                 setattr(
                     spec,
                     key,
-                    self.component_vars[key].get(),
+                    material_name,
                 )
                 numeric_key = (
                     f"{key}_n"
                 )
                 if numeric_key in self.component_vars:
+                    numeric_value = float(
+                        self.component_vars[
+                            numeric_key
+                        ].get()
+                    )
+                    numeric_value = _material_refractive_index(
+                        material_name,
+                        numeric_value,
+                    )
                     setattr(
                         spec,
                         numeric_key,
-                        float(
-                            self.component_vars[
-                                numeric_key
-                            ].get()
-                        ),
+                        numeric_value,
                     )
 
             self._validate_component(
@@ -1584,7 +1633,7 @@ class OpticalEditorApp:
 
     def _apply_trace_settings(
         self,
-    ):
+    ) -> bool:
         old_state = asdict(
             self.model.source
         )
@@ -1636,16 +1685,26 @@ class OpticalEditorApp:
                 "Invalid value",
                 str(exc),
             )
-            return
+            return False
 
         self._clear_rays()
         self._rebuild_system()
         self._render_scene()
+        return True
 
     def _validate_component(
         self,
         spec: ComponentSpec,
     ):
+        names = [
+            component.name
+            for component in self.model.components
+        ]
+        if names.count(spec.name) > 1:
+            raise ValueError(
+                "Component names must be unique."
+            )
+
         if spec.width <= 0 or spec.height <= 0:
             raise ValueError(
                 "Width and height must be positive."
@@ -1682,7 +1741,8 @@ class OpticalEditorApp:
     def _trace_rays(
         self,
     ):
-        self._apply_trace_settings()
+        if not self._apply_trace_settings():
+            return
 
         def action():
             self.system = self.model.build_system()
@@ -1747,6 +1807,16 @@ class OpticalEditorApp:
             )
             return
 
+        detector_1_name = self.move_detector_1_var.get()
+        detector_2_name = self.move_detector_2_var.get()
+
+        if not detector_1_name or not detector_2_name:
+            messagebox.showerror(
+                "Error",
+                "Select two detectors for the move scan."
+            )
+            return
+
         positions = np.linspace(
             minimum,
             maximum,
@@ -1758,8 +1828,8 @@ class OpticalEditorApp:
         )
 
         def action():
-            detector_1 = []
-            detector_2 = []
+            detector_1_values = []
+            detector_2_values = []
 
             for value in positions:
                 component.position[axis_index] = float(
@@ -1767,22 +1837,23 @@ class OpticalEditorApp:
                 )
                 system = self.model.build_system()
                 system.trace()
-
-                if len(system.detectors) < 2:
-                    raise RuntimeError(
-                        "Move scan needs at least two detectors."
-                    )
-
-                detector_1.append(
-                    system.detectors[0].intensity
+                detector_1 = system.detector_by_name(
+                    detector_1_name
                 )
-                detector_2.append(
-                    system.detectors[1].intensity
+                detector_2 = system.detector_by_name(
+                    detector_2_name
+                )
+
+                detector_1_values.append(
+                    detector_1.intensity
+                )
+                detector_2_values.append(
+                    detector_2.intensity
                 )
 
             return (
-                np.asarray(detector_1),
-                np.asarray(detector_2),
+                np.asarray(detector_1_values),
+                np.asarray(detector_2_values),
             )
 
         result = self._run_logged(
@@ -1924,9 +1995,11 @@ class OpticalEditorApp:
         if not path:
             return
 
-        self.model.save_json(path)
-        self._log(
-            f"Architecture saved to {path}."
+        self._run_logged(
+            lambda: self.model.save_json(path),
+            success_message=(
+                f"Architecture saved to {path}."
+            ),
         )
 
     def _load_architecture(
@@ -1942,20 +2015,24 @@ class OpticalEditorApp:
         if not path:
             return
 
-        self.model = OpticalArchitectureModel.load_json(
-            path
-        )
-        self.selected_index = None
-        self._clear_rays()
-        self._rebuild_system()
-        self._show_component_panel()
-        self._render_scene(
-            preserve_limits=False
-        )
-        self._log(
-            f"Architecture loaded from {path}."
-        )
+        def action():
+            self.model = OpticalArchitectureModel.load_json(
+                path
+            )
+            self.selected_index = None
+            self._clear_rays()
+            self._rebuild_system()
+            self._show_component_panel()
+            self._render_scene(
+                preserve_limits=False
+            )
 
+        self._run_logged(
+            action,
+            success_message=(
+                f"Architecture loaded from {path}."
+            ),
+        )
     def _find_component_by_name(
         self,
         name: str,
@@ -2521,6 +2598,21 @@ def _build_material(
 
     raise ValueError(
         f"Unsupported material: {name}"
+    )
+
+
+def _material_refractive_index(
+    name: str,
+    custom_n: float,
+) -> float:
+    if name == "Custom":
+        return float(custom_n)
+
+    return float(
+        _build_material(
+            name,
+            custom_n,
+        ).n(632.8e-9)
     )
 
 
