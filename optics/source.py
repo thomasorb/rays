@@ -13,21 +13,65 @@ class Source:
         direction=(1, 0, 0),
         wavelength=632.8e-9,
     ):
+        self.set_position(
+            position
+        )
+        self.set_direction(
+            direction
+        )
+        self.set_wavelength(
+            wavelength
+        )
+
+    # ------------------------------------------------
+
+    def set_position(
+        self,
+        position,
+    ):
         self.position = np.asarray(
             position,
             dtype=float,
         )
 
-        self.direction = np.asarray(
+    def set_direction(
+        self,
+        direction,
+    ):
+        direction = np.asarray(
             direction,
             dtype=float,
         )
 
-        self.direction /= np.linalg.norm(
-            self.direction
+        norm = np.linalg.norm(
+            direction
         )
 
-        self.wavelength = wavelength
+        if norm == 0:
+            raise ValueError(
+                "direction must be non-zero"
+            )
+
+        self.direction = (
+            direction / norm
+        )
+
+    def set_wavelength(
+        self,
+        wavelength,
+    ):
+        self.wavelength = float(
+            wavelength
+        )
+
+    def get_beam_parameters(
+        self,
+    ):
+        return {
+            "position": self.position.copy(),
+            "direction": self.direction.copy(),
+            "wavelength": self.wavelength,
+        }
 
     # ------------------------------------------------
 

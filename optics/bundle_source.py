@@ -16,25 +16,101 @@ class CircularBundleSource:
         radius,
         n_rays,
     ):
+        self.set_position(
+            position
+        )
+        self.set_direction(
+            direction
+        )
+        self.set_wavelength(
+            wavelength
+        )
+        self.set_radius(
+            radius
+        )
+        self.set_n_rays(
+            n_rays
+        )
+
+    # ----------------------------------
+
+    def set_position(
+        self,
+        position,
+    ):
         self.position = np.asarray(
             position,
             dtype=float,
         )
 
-        self.direction = np.asarray(
+    def set_direction(
+        self,
+        direction,
+    ):
+        direction = np.asarray(
             direction,
             dtype=float,
         )
 
-        self.direction /= np.linalg.norm(
-            self.direction
+        norm = np.linalg.norm(
+            direction
         )
 
-        self.wavelength = wavelength
+        if norm == 0:
+            raise ValueError(
+                "direction must be non-zero"
+            )
+
+        self.direction = (
+            direction / norm
+        )
+
+    def set_wavelength(
+        self,
+        wavelength,
+    ):
+        self.wavelength = float(
+            wavelength
+        )
+
+    def set_radius(
+        self,
+        radius,
+    ):
+        radius = float(
+            radius
+        )
+
+        if radius < 0:
+            raise ValueError(
+                "radius must be >= 0"
+            )
 
         self.radius = radius
 
+    def set_n_rays(
+        self,
+        n_rays,
+    ):
+        n_rays = int(n_rays)
+
+        if n_rays <= 0:
+            raise ValueError(
+                "n_rays must be > 0"
+            )
+
         self.n_rays = n_rays
+
+    def get_beam_parameters(
+        self,
+    ):
+        return {
+            "position": self.position.copy(),
+            "direction": self.direction.copy(),
+            "wavelength": self.wavelength,
+            "radius": self.radius,
+            "n_rays": self.n_rays,
+        }
 
     # ----------------------------------
 

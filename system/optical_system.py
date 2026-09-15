@@ -140,10 +140,8 @@ class OpticalSystem:
     def trace(
             self,
             verbose=False,
-            
+            progress_callback=None,
     ):
-        from tqdm.notebook import tqdm
-
         if self.source is None:
 
             raise RuntimeError(
@@ -167,9 +165,19 @@ class OpticalSystem:
             Ray,
         ):
 
+            if progress_callback is not None:
+                progress_callback(
+                    value=None,
+                    message="Tracing ray 1/1",
+                    current=0,
+                    total=1,
+                )
+
             rays = (
                 self.tracer.trace(
-                    emitted
+                    emitted,
+                    progress_callback=
+                        progress_callback,
                 )
             )
 
@@ -186,20 +194,36 @@ class OpticalSystem:
             RayBundle,
         ):
 
-            iterator = emitted
+            total_rays = len(
+                emitted
+            )
 
-            if verbose:
+            for index, ray in enumerate(
+                emitted,
+                start=1,
+            ):
 
-                iterator = tqdm(
-                    emitted,
-                    desc="Bundle rays",
-                    leave=False,
-                )
+                if verbose:
+                    print(
+                        f"Tracing ray "
+                        f"{index}/{total_rays}"
+                    )
 
-            for ray in iterator:
+                if progress_callback is not None:
+                    progress_callback(
+                        value=index / total_rays,
+                        message=(
+                            f"Tracing ray "
+                            f"{index}/{total_rays}"
+                        ),
+                        current=index,
+                        total=total_rays,
+                    )
 
                 rays = self.tracer.trace(
-                    ray
+                    ray,
+                    progress_callback=
+                        progress_callback,
                 )
 
                 all_rays.extend(
@@ -322,16 +346,34 @@ class OpticalSystem:
         n_iter,
         detector1,
         detector2,
+        progress_callback=None,
     ):
 
         det1 = []
         det2 = []
 
-        for _ in range(n_iter):
+        for index in range(n_iter):
+
+            if progress_callback is not None:
+                progress_callback(
+                    value=(
+                        (index + 1)
+                        / n_iter
+                    ),
+                    message=(
+                        f"Monte-Carlo "
+                        f"{index + 1}/{n_iter}"
+                    ),
+                    current=index + 1,
+                    total=n_iter,
+                )
 
             self.randomize_wavefront_errors()
 
-            self.trace()
+            self.trace(
+                progress_callback=
+                    progress_callback
+            )
 
             det1.append(
                 detector1.intensity
@@ -345,4 +387,3 @@ class OpticalSystem:
             np.asarray(det1),
             np.asarray(det2),
         )
-
