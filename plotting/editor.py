@@ -200,6 +200,10 @@ class OpticalEditor:
                 "button_release_event",
                 self.on_mouse_release,
             ),
+            self.figure.canvas.mpl_connect(
+                "key_press_event",
+                self.on_key_press,
+            ),
         ]
 
     # ==================================================
@@ -1234,6 +1238,73 @@ class OpticalEditor:
         self._drag_anchor = None
         self._drag_source_position = None
 
+    def on_key_press(
+        self,
+        event,
+    ):
+        key = getattr(
+            event,
+            "key",
+            None,
+        )
+
+        if key is None:
+            return
+
+        if key == "tab":
+            self._cycle_selection(
+                1
+            )
+            return
+
+        if key == "shift+tab":
+            self._cycle_selection(
+                -1
+            )
+            return
+
+        if key == "t":
+            self.run_trace()
+            return
+
+        if key == "m":
+            self.run_move()
+            return
+
+        source = self.beam_source()
+
+        if (
+            source is None
+            or
+            self.selection.selected_object
+            is not source
+        ):
+            return
+
+        if key in {
+            "left",
+            "right",
+            "up",
+            "down",
+        }:
+            self._nudge_source(
+                key
+            )
+            return
+
+        if key in {
+            "shift+left",
+            "shift+right",
+            "shift+up",
+            "shift+down",
+        }:
+            self._rotate_source_with_key(
+                key.split(
+                    "+",
+                    1,
+                )[1]
+            )
+
     def _event_point(
         self,
         event,
@@ -1269,6 +1340,120 @@ class OpticalEditor:
             )
 
         return scale
+
+    def _selectable_objects(
+        self,
+    ):
+        objects = list(
+            self.system.tracer.elements
+        )
+
+        if self.beam_source() is not None:
+            objects.insert(
+                0,
+                self.beam_source()
+            )
+
+        return objects
+
+    def _cycle_selection(
+        self,
+        step,
+    ):
+        selectable = (
+            self._selectable_objects()
+        )
+
+        if not selectable:
+            return
+
+        selected = (
+            self.selection.selected_object
+        )
+
+        try:
+            index = selectable.index(
+                selected
+            )
+        except ValueError:
+            index = -1
+
+        self.select_object(
+            selectable[
+                (
+                    index + step
+                )
+                % len(selectable)
+            ]
+        )
+        self.refresh()
+
+    def _nudge_source(
+        self,
+        key,
+    ):
+        step = max(
+            0.1,
+            self._source_handle_length()
+            * 0.25,
+        )
+        delta_2d = {
+            "left": np.array(
+                [-step, 0.0]
+            ),
+            "right": np.array(
+                [step, 0.0]
+            ),
+            "up": np.array(
+                [0.0, step]
+            ),
+            "down": np.array(
+                [0.0, -step]
+            ),
+        }[key]
+
+        delta_3d = np.zeros(3)
+        i, j = VIEW_MAP[
+            self.view
+        ]
+        delta_3d[i] = delta_2d[0]
+        delta_3d[j] = delta_2d[1]
+
+        self.beam_source().set_position(
+            self.beam_source().position
+            + delta_3d
+        )
+        self.refresh()
+
+    def _rotate_source_with_key(
+        self,
+        key,
+    ):
+        direction_2d = {
+            "left": np.array(
+                [-1.0, 0.0]
+            ),
+            "right": np.array(
+                [1.0, 0.0]
+            ),
+            "up": np.array(
+                [0.0, 1.0]
+            ),
+            "down": np.array(
+                [0.0, -1.0]
+            ),
+        }[key]
+
+        direction = np.zeros(3)
+        i, j = VIEW_MAP[
+            self.view
+        ]
+        direction[i] = direction_2d[0]
+        direction[j] = direction_2d[1]
+        self.beam_source().set_direction(
+            direction
+        )
+        self.refresh()
 
     def _source_origin_2d(
         self,
