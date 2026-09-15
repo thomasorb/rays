@@ -62,6 +62,7 @@ class Tracer:
         self,
         initial_ray,
         max_interactions=100,
+        progress_callback=None,
     ):
 
         active_rays = [
@@ -73,6 +74,17 @@ class Tracer:
         interactions = 0
 
         while active_rays:
+
+            if progress_callback is not None:
+                progress_callback(
+                    value=None,
+                    message=(
+                        f"Tracing interaction "
+                        f"{interactions + 1}"
+                    ),
+                    current=interactions,
+                    total=max_interactions,
+                )
 
             ray = active_rays.pop()
 

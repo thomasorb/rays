@@ -240,9 +240,13 @@ class CornerCubeMichelson:
 
     def trace(
         self,
+        progress_callback=None,
     ):
 
-        return self.system.trace()
+        return self.system.trace(
+            progress_callback=
+                progress_callback
+        )
 
     # ======================================================
     # MIRROR MOTION
@@ -291,6 +295,7 @@ class CornerCubeMichelson:
     def scan_mirror(
         self,
         mirror_positions,
+        progress_callback=None,
     ):
 
         mirror_positions = np.asarray(
@@ -303,13 +308,78 @@ class CornerCubeMichelson:
 
         try:
 
-            for dx in mirror_positions:
+            n_positions = len(
+                mirror_positions
+            )
+
+            for index, dx in enumerate(
+                mirror_positions,
+                start=1,
+            ):
+
+                def step_progress(
+                    value=None,
+                    message=None,
+                    current=None,
+                    total=None,
+                ):
+                    if progress_callback is None:
+                        return
+
+                    if value is None:
+                        progress_callback(
+                            value=None,
+                            message=(
+                                message
+                                or
+                                f"Tracing move step "
+                                f"{index}/{n_positions}"
+                            ),
+                            current=index,
+                            total=n_positions,
+                        )
+                        return
+
+                    progress_callback(
+                        value=(
+                            (
+                                index - 1
+                                + value
+                            )
+                            / n_positions
+                        ),
+                        message=(
+                            message
+                            or
+                            f"Tracing move step "
+                            f"{index}/{n_positions}"
+                        ),
+                        current=index,
+                        total=n_positions,
+                    )
 
                 self.move_mirror(
                     dx
                 )
 
-                self.trace()
+                if progress_callback is not None:
+                    progress_callback(
+                        value=(
+                            (index - 1)
+                            / n_positions
+                        ),
+                        message=(
+                            f"Moving mirror "
+                            f"{index}/{n_positions}"
+                        ),
+                        current=index - 1,
+                        total=n_positions,
+                    )
+
+                self.trace(
+                    progress_callback=
+                        step_progress
+                )
 
                 signal_det1.append(
                     self.detector1.intensity
@@ -318,6 +388,17 @@ class CornerCubeMichelson:
                 signal_det2.append(
                     self.detector2.intensity
                 )
+
+                if progress_callback is not None:
+                    progress_callback(
+                        value=index / n_positions,
+                        message=(
+                            f"Completed move step "
+                            f"{index}/{n_positions}"
+                        ),
+                        current=index,
+                        total=n_positions,
+                    )
 
         finally:
 
