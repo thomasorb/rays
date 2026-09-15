@@ -74,24 +74,23 @@ class Tracer:
         interactions = 0
 
         while active_rays:
-
-            if progress_callback is not None:
-                progress_callback(
-                    value=None,
-                    message=(
-                        f"Tracing interaction "
-                        f"{interactions + 1}"
-                    ),
-                    current=interactions + 1,
-                    total=max_interactions,
-                )
-
             ray = active_rays.pop()
 
             if interactions > max_interactions:
                 break
 
             interactions += 1
+
+            if progress_callback is not None:
+                progress_callback(
+                    value=None,
+                    message=(
+                        f"Tracing interaction "
+                        f"{interactions}"
+                    ),
+                    current=interactions,
+                    total=max_interactions,
+                )
 
             element, distance = (
                 self.find_next_element(

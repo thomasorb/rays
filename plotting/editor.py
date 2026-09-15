@@ -1540,7 +1540,9 @@ class OpticalEditor:
         best_distance = np.inf
         best_object = None
 
-        for element in self.system.tracer.elements:
+        for element in (
+            self._selectable_objects()
+        ):
             distance = self._distance_to_element(
                 element,
                 point,
@@ -1562,6 +1564,12 @@ class OpticalEditor:
         element,
         point,
     ):
+        if element is self.beam_source():
+            return np.linalg.norm(
+                point
+                - self._source_origin_2d()
+            )
+
         i, j = VIEW_MAP[
             self.view
         ]
