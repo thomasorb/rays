@@ -194,12 +194,24 @@ class OpticalSystem:
             RayBundle,
         ):
 
-            total_rays = len(
-                emitted
-            )
+            if hasattr(
+                emitted,
+                "__len__",
+            ):
+                total_rays = len(
+                    emitted
+                )
+                iterator = emitted
+            else:
+                iterator = list(
+                    emitted
+                )
+                total_rays = len(
+                    iterator
+                )
 
             for index, ray in enumerate(
-                emitted,
+                iterator,
                 start=1,
             ):
 

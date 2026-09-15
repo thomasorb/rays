@@ -1207,9 +1207,7 @@ class OpticalEditor:
             if norm == 0:
                 return
 
-            direction = (
-                source.direction.copy()
-            )
+            direction = np.zeros(3)
             direction[i] = (
                 direction_2d[0]
                 / norm
@@ -1387,6 +1385,21 @@ class OpticalEditor:
             outline = (
                 element.get_outline()
             )[:, [i, j]]
+            if len(outline) < 2:
+                if len(outline) == 1:
+                    return np.linalg.norm(
+                        point
+                        - outline[0]
+                    )
+                center = np.array(
+                    [
+                        element.transform.position[i],
+                        element.transform.position[j],
+                    ]
+                )
+                return np.linalg.norm(
+                    point - center
+                )
             return min(
                 self._distance_to_segment(
                     point,
