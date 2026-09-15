@@ -110,6 +110,9 @@ def _parameter_kind(
     parameter,
 ):
     default = parameter.default
+    annotation = (
+        parameter.annotation
+    )
 
     if parameter.name in {
         "position",
@@ -120,6 +123,17 @@ def _parameter_kind(
 
     if parameter.name == "rotation":
         return "rotation"
+
+    if annotation in {
+        int,
+        float,
+        bool,
+    }:
+        return {
+            int: "int",
+            float: "float",
+            bool: "bool",
+        }[annotation]
 
     if default is inspect._empty:
         return "text"

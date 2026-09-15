@@ -169,7 +169,7 @@ class OpticalSystem:
                 progress_callback(
                     value=None,
                     message="Tracing ray 1/1",
-                    current=0,
+                    current=1,
                     total=1,
                 )
 
@@ -221,37 +221,87 @@ class OpticalSystem:
                             f"{index}/{total_rays}"
                         )
 
-                if progress_callback is not None:
+                def ray_progress(
+                    value=None,
+                    message=None,
+                    current=None,
+                    total=None,
+                ):
+                    if progress_callback is None:
+                        return
+
                     if total_rays is None:
                         progress_callback(
                             value=None,
                             message=(
+                                message
+                                or
                                 f"Tracing ray "
                                 f"{index}"
                             ),
                             current=index,
                             total=None,
                         )
-                    else:
+                        return
+
+                    if value is None:
                         progress_callback(
-                            value=index / total_rays,
+                            value=(
+                                (index - 1)
+                                / total_rays
+                            ),
                             message=(
+                                message
+                                or
                                 f"Tracing ray "
                                 f"{index}/{total_rays}"
                             ),
                             current=index,
                             total=total_rays,
                         )
+                        return
+
+                    progress_callback(
+                        value=(
+                            (
+                                index - 1
+                                + value
+                            )
+                            / total_rays
+                        ),
+                        message=(
+                            message
+                            or
+                            f"Tracing ray "
+                            f"{index}/{total_rays}"
+                        ),
+                        current=index,
+                        total=total_rays,
+                    )
 
                 rays = self.tracer.trace(
                     ray,
                     progress_callback=
-                        progress_callback,
+                        ray_progress,
                 )
 
                 all_rays.extend(
                     rays
                 )
+
+                if (
+                    progress_callback is not None
+                    and total_rays is not None
+                ):
+                    progress_callback(
+                        value=index / total_rays,
+                        message=(
+                            f"Completed ray "
+                            f"{index}/{total_rays}"
+                        ),
+                        current=index,
+                        total=total_rays,
+                    )
         else:
 
             raise TypeError(

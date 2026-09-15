@@ -205,7 +205,7 @@ def test_progress_state_transitions_for_trace_and_move():
     assert result["det1"].shape == (5,)
     assert editor.progress.state == "success"
     assert any(
-        value is None
+        value is not None
         for state, value, _message
         in editor.progress.history
         if state == "running"
@@ -306,6 +306,55 @@ def test_keyboard_controls_provide_source_accessibility():
     )
 
 
+def test_run_trace_progress_events_are_monotonic_for_bundle_sources():
+    michelson = build_michelson()
+    editor = OpticalEditor(
+        michelson
+    )
+
+    events = []
+    original_callback = (
+        editor._progress_callback
+    )
+
+    def capture(
+        value=None,
+        message=None,
+        current=None,
+        total=None,
+    ):
+        events.append(
+            (
+                value,
+                message,
+                current,
+                total,
+            )
+        )
+        original_callback(
+            value=value,
+            message=message,
+            current=current,
+            total=total,
+        )
+
+    editor._progress_callback = capture
+    editor.run_trace()
+
+    determinate_values = [
+        value
+        for value, _message, _current, _total
+        in events
+        if value is not None
+    ]
+
+    assert determinate_values
+    assert determinate_values == sorted(
+        determinate_values
+    )
+    assert determinate_values[-1] == 1.0
+
+
 def test_progress_error_state_when_trace_fails():
     michelson = build_michelson(
         source=Source(
@@ -326,3 +375,24 @@ def test_progress_error_state_when_trace_fails():
         editor.run_trace()
 
     assert editor.progress.state == "error"
+
+
+def test_single_ray_trace_uses_indeterminate_progress():
+    michelson = build_michelson(
+        source=Source(
+            position=[-4, 0, 0],
+            direction=[1, 0, 0],
+        )
+    )
+    editor = OpticalEditor(
+        michelson
+    )
+
+    editor.run_trace()
+
+    assert any(
+        value is None
+        for state, value, _message
+        in editor.progress.history
+        if state == "running"
+    )
