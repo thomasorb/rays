@@ -82,7 +82,7 @@ class Tracer:
                         f"Tracing interaction "
                         f"{interactions + 1}"
                     ),
-                    current=interactions,
+                    current=interactions + 1,
                     total=max_interactions,
                 )
 

@@ -241,24 +241,24 @@ def test_scan_progress_payloads_are_consistent():
         progress_callback=callback,
     )
 
-    moving_events = [
+    completed_events = [
         event
         for event in events
         if event[1]
         and event[1].startswith(
-            "Moving mirror"
+            "Completed move step"
         )
     ]
 
-    assert moving_events[0] == (
-        0.0,
-        "Moving mirror 1/3",
+    assert completed_events[0] == (
+        1 / 3,
+        "Completed move step 1/3",
         1,
         3,
     )
-    assert moving_events[-1] == (
-        2 / 3,
-        "Moving mirror 3/3",
+    assert completed_events[-1] == (
+        1.0,
+        "Completed move step 3/3",
         3,
         3,
     )
