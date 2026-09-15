@@ -1096,6 +1096,9 @@ class OpticalEditor:
         self,
         event,
     ):
+        if event.button != 1:
+            return
+
         if event.inaxes != self.plot_ax:
             return
 

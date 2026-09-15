@@ -216,28 +216,19 @@ def _display_label(
     name,
     factory,
 ):
-    if inspect.isclass(
-        factory
-    ):
-        try:
-            instance = factory()
-        except TypeError:
-            return _humanize(
-                name
-            )
-
-        display_name = getattr(
-            instance,
-            "name",
-            None,
-        )
-
-        if display_name:
-            return display_name
-
-    return _humanize(
-        name
+    display_name = getattr(
+        factory,
+        "DISPLAY_NAME",
+        None,
     )
+
+    if isinstance(
+        display_name,
+        str,
+    ) and display_name:
+        return display_name
+
+    return _humanize(name)
 
 
 def _material_specs_from_module(
