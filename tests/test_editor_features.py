@@ -295,15 +295,17 @@ def test_keyboard_controls_provide_source_accessibility():
         [0.0, 0.0, 1.0],
     )
 
+    tab_event = SimpleNamespace(
+        key="tab"
+    )
     editor.on_key_press(
-        SimpleNamespace(
-            key="tab"
-        )
+        tab_event
     )
     assert (
         editor.selection.selected_object
         is not michelson.system.source
     )
+    assert tab_event.handled is True
 
 
 def test_run_trace_progress_events_are_monotonic_for_bundle_sources():

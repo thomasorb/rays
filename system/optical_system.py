@@ -168,8 +168,8 @@ class OpticalSystem:
             if progress_callback is not None:
                 progress_callback(
                     value=None,
-                    message="Tracing ray 1/1",
-                    current=1,
+                    message="Starting ray 1/1",
+                    current=0,
                     total=1,
                 )
 
