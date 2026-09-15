@@ -4,9 +4,12 @@ import numpy as np
 
 from tracing.ray import Ray
 from tracing.ray_bundle import RayBundle
+from .base import Optic
 
 
-class CircularBundleSource:
+class CircularBundleSource(
+    Optic
+):
 
     def __init__(
         self,

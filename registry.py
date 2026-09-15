@@ -8,12 +8,7 @@ import pkgutil
 import re
 
 from materials.material import Material
-from optics.base import OpticalElement
-from optics.bundle_source import CircularBundleSource
-from optics.corner_cube import CornerCube
-from optics.plate_beamsplitter import PlateBeamSplitter
-from optics.source import Source
-from optics.window import Window
+from optics.base import Optic
 
 
 ROOT = Path(__file__).resolve().parent
@@ -28,16 +23,6 @@ OPTIC_BASES = {
     "PlanarElement",
     "OpticalInterface",
 }
-
-OPTIC_ROOT_TYPES = (
-    OpticalElement,
-    Source,
-    CircularBundleSource,
-    Window,
-    PlateBeamSplitter,
-    CornerCube,
-)
-
 
 @dataclass(frozen=True)
 class ParameterSpec:
@@ -380,7 +365,7 @@ def discover_optic_specs():
 
             if not issubclass(
                 member,
-                OPTIC_ROOT_TYPES,
+                Optic,
             ):
                 continue
 

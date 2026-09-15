@@ -4,7 +4,13 @@ from geometry.transform import Transform
 from geometry.plane import Plane
 
 
-class OpticalElement:
+class Optic:
+    pass
+
+
+class OpticalElement(
+    Optic
+):
 
     def __init__(
         self,

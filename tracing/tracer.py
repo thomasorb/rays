@@ -76,7 +76,7 @@ class Tracer:
         while active_rays:
             ray = active_rays.pop()
 
-            if interactions > max_interactions:
+            if interactions >= max_interactions:
                 break
 
             interactions += 1
