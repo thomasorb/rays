@@ -1596,16 +1596,29 @@ class OpticalEditor:
                 return np.linalg.norm(
                     point - center
                 )
+            segments = list(
+                zip(
+                    outline[:-1],
+                    outline[1:],
+                )
+            )
+            if not np.allclose(
+                outline[0],
+                outline[-1],
+            ):
+                segments.append(
+                    (
+                        outline[-1],
+                        outline[0],
+                    )
+                )
             return min(
                 self._distance_to_segment(
                     point,
                     start,
                     end,
                 )
-                for start, end in zip(
-                    outline[:-1],
-                    outline[1:],
-                )
+                for start, end in segments
             )
 
         center = np.array(

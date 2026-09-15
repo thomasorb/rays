@@ -4,10 +4,13 @@ import numpy as np
 
 from scipy.spatial.transform import Rotation
 
+from .base import Optic
 from .mirror import Mirror
 
 
-class CornerCube:
+class CornerCube(
+    Optic
+):
     """
     Corner cube retroreflector.
 

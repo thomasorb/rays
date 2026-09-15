@@ -3,9 +3,12 @@ from __future__ import annotations
 import numpy as np
 
 from tracing.ray import Ray
+from .base import Optic
 
 
-class Source:
+class Source(
+    Optic
+):
 
     def __init__(
         self,

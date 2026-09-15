@@ -6,13 +6,16 @@ from materials.constant_index import (
     ConstantIndex
 )
 
+from .base import Optic
 from .optical_interface import (
     OpticalInterface
 )
 
 from materials.air import AIR
 
-class Window:
+class Window(
+    Optic
+):
     """
     Plane-parallel plate.
 
