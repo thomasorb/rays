@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import matplotlib
 matplotlib.use("Agg")
 import numpy as np
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -224,9 +225,10 @@ def test_progress_error_state_when_trace_fails():
         michelson
     )
 
-    try:
+    with pytest.raises(
+        RuntimeError,
+        match="No source defined",
+    ):
         editor.run_trace()
-    except RuntimeError:
-        pass
 
     assert editor.progress.state == "error"
