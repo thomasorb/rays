@@ -201,36 +201,47 @@ class OpticalSystem:
                 total_rays = len(
                     emitted
                 )
-                iterator = emitted
             else:
-                iterator = list(
-                    emitted
-                )
-                total_rays = len(
-                    iterator
-                )
+                total_rays = None
 
             for index, ray in enumerate(
-                iterator,
+                emitted,
                 start=1,
             ):
 
                 if verbose:
-                    print(
-                        f"Tracing ray "
-                        f"{index}/{total_rays}"
-                    )
-
-                if progress_callback is not None:
-                    progress_callback(
-                        value=index / total_rays,
-                        message=(
+                    if total_rays is None:
+                        print(
+                            f"Tracing ray "
+                            f"{index}"
+                        )
+                    else:
+                        print(
                             f"Tracing ray "
                             f"{index}/{total_rays}"
-                        ),
-                        current=index,
-                        total=total_rays,
-                    )
+                        )
+
+                if progress_callback is not None:
+                    if total_rays is None:
+                        progress_callback(
+                            value=None,
+                            message=(
+                                f"Tracing ray "
+                                f"{index}"
+                            ),
+                            current=index,
+                            total=None,
+                        )
+                    else:
+                        progress_callback(
+                            value=index / total_rays,
+                            message=(
+                                f"Tracing ray "
+                                f"{index}/{total_rays}"
+                            ),
+                            current=index,
+                            total=total_rays,
+                        )
 
                 rays = self.tracer.trace(
                     ray,
