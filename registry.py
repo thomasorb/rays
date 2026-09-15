@@ -44,6 +44,12 @@ class ComponentSpec:
     capabilities: tuple[str, ...]
 
 
+def _return_member(
+    member,
+):
+    return member
+
+
 def _humanize(
     name,
 ):
@@ -288,9 +294,8 @@ def _material_specs_from_module(
                         _humanize(name),
                     ),
                     module=module.__name__,
-                    factory=partial(
-                        lambda value: value,
-                        member,
+                    factory=_return_member(
+                        member
                     ),
                     parameters=(),
                     capabilities=(),

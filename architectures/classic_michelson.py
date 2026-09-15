@@ -452,7 +452,7 @@ class ClassicMichelson:
                             f"Moving mirror "
                             f"{index}/{n_positions}"
                         ),
-                        current=index - 1,
+                        current=index,
                         total=n_positions,
                     )
 

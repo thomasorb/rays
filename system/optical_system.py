@@ -380,14 +380,14 @@ class OpticalSystem:
             if progress_callback is not None:
                 progress_callback(
                     value=(
-                        (index + 1)
+                        index
                         / n_iter
                     ),
                     message=(
-                        f"Monte-Carlo "
+                        f"Starting Monte-Carlo "
                         f"{index + 1}/{n_iter}"
                     ),
-                    current=index + 1,
+                    current=index,
                     total=n_iter,
                 )
 
@@ -397,6 +397,20 @@ class OpticalSystem:
                 progress_callback=
                     progress_callback
             )
+
+            if progress_callback is not None:
+                progress_callback(
+                    value=(
+                        (index + 1)
+                        / n_iter
+                    ),
+                    message=(
+                        f"Completed Monte-Carlo "
+                        f"{index + 1}/{n_iter}"
+                    ),
+                    current=index + 1,
+                    total=n_iter,
+                )
 
             det1.append(
                 detector1.intensity

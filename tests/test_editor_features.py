@@ -212,6 +212,100 @@ def test_progress_state_transitions_for_trace_and_move():
     )
 
 
+def test_scan_progress_payloads_are_consistent():
+    michelson = build_michelson()
+
+    events = []
+
+    def callback(
+        value=None,
+        message=None,
+        current=None,
+        total=None,
+    ):
+        events.append(
+            (
+                value,
+                message,
+                current,
+                total,
+            )
+        )
+
+    michelson.scan_mirror(
+        np.linspace(
+            -1e-7,
+            1e-7,
+            3,
+        ),
+        progress_callback=callback,
+    )
+
+    moving_events = [
+        event
+        for event in events
+        if event[1]
+        and event[1].startswith(
+            "Moving mirror"
+        )
+    ]
+
+    assert moving_events[0] == (
+        0.0,
+        "Moving mirror 1/3",
+        1,
+        3,
+    )
+    assert moving_events[-1] == (
+        2 / 3,
+        "Moving mirror 3/3",
+        3,
+        3,
+    )
+
+
+def test_keyboard_controls_provide_source_accessibility():
+    michelson = build_michelson(
+        source=Source(
+            position=[-4, 0, 0],
+            direction=[1, 0, 0],
+        )
+    )
+    editor = OpticalEditor(
+        michelson
+    )
+
+    editor.on_key_press(
+        SimpleNamespace(
+            key="right"
+        )
+    )
+    assert (
+        michelson.system.source.position[0]
+        > -4.0
+    )
+
+    editor.on_key_press(
+        SimpleNamespace(
+            key="shift+up"
+        )
+    )
+    assert np.allclose(
+        michelson.system.source.direction,
+        [0.0, 0.0, 1.0],
+    )
+
+    editor.on_key_press(
+        SimpleNamespace(
+            key="tab"
+        )
+    )
+    assert (
+        editor.selection.selected_object
+        is not michelson.system.source
+    )
+
+
 def test_progress_error_state_when_trace_fails():
     michelson = build_michelson(
         source=Source(
