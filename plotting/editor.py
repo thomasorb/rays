@@ -1252,12 +1252,18 @@ class OpticalEditor:
             return
 
         if key == "tab":
+            self._mark_event_handled(
+                event
+            )
             self._cycle_selection(
                 1
             )
             return
 
         if key == "shift+tab":
+            self._mark_event_handled(
+                event
+            )
             self._cycle_selection(
                 -1
             )
@@ -1318,6 +1324,16 @@ class OpticalEditor:
                 event.ydata,
             ],
             dtype=float,
+        )
+
+    def _mark_event_handled(
+        self,
+        event,
+    ):
+        setattr(
+            event,
+            "handled",
+            True,
         )
 
     def _source_handle_length(
