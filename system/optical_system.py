@@ -376,21 +376,6 @@ class OpticalSystem:
         det2 = []
 
         for index in range(n_iter):
-
-            if progress_callback is not None:
-                progress_callback(
-                    value=(
-                        index
-                        / n_iter
-                    ),
-                    message=(
-                        f"Starting Monte-Carlo "
-                        f"{index + 1}/{n_iter}"
-                    ),
-                    current=index,
-                    total=n_iter,
-                )
-
             self.randomize_wavefront_errors()
 
             self.trace(

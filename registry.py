@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import partial
 import importlib
 import inspect
 from pathlib import Path
@@ -9,6 +8,12 @@ import pkgutil
 import re
 
 from materials.material import Material
+from optics.base import OpticalElement
+from optics.bundle_source import CircularBundleSource
+from optics.corner_cube import CornerCube
+from optics.plate_beamsplitter import PlateBeamSplitter
+from optics.source import Source
+from optics.window import Window
 
 
 ROOT = Path(__file__).resolve().parent
@@ -23,6 +28,15 @@ OPTIC_BASES = {
     "PlanarElement",
     "OpticalInterface",
 }
+
+OPTIC_ROOT_TYPES = (
+    OpticalElement,
+    Source,
+    CircularBundleSource,
+    Window,
+    PlateBeamSplitter,
+    CornerCube,
+)
 
 
 @dataclass(frozen=True)
@@ -348,6 +362,12 @@ def discover_optic_specs():
                 continue
 
             if name in OPTIC_BASES:
+                continue
+
+            if not issubclass(
+                member,
+                OPTIC_ROOT_TYPES,
+            ):
                 continue
 
             parameter_specs = (

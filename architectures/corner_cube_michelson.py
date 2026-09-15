@@ -362,20 +362,6 @@ class CornerCubeMichelson:
                     dx
                 )
 
-                if progress_callback is not None:
-                    progress_callback(
-                        value=(
-                            (index - 1)
-                            / n_positions
-                        ),
-                        message=(
-                            f"Moving mirror "
-                            f"{index}/{n_positions}"
-                        ),
-                        current=index,
-                        total=n_positions,
-                    )
-
                 self.trace(
                     progress_callback=
                         step_progress
