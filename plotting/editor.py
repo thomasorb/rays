@@ -760,6 +760,13 @@ class OpticalEditor:
                 ax=self.plot_ax,
             )
 
+        for detector in self.system.detectors:
+            plot_element(
+                detector,
+                view=self.view,
+                ax=self.plot_ax,
+            )
+
         if self.current_rays is not None:
             for ray in self.current_rays:
                 plot_ray(
@@ -1362,6 +1369,9 @@ class OpticalEditor:
     ):
         objects = list(
             self.system.tracer.elements
+        )
+        objects.extend(
+            self.system.detectors
         )
 
         if self.beam_source() is not None:

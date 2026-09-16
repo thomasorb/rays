@@ -428,9 +428,48 @@ class OpticalSystem:
         for index in range(n_iter):
             self.randomize_wavefront_errors()
 
+            def trace_progress(
+                value=None,
+                message=None,
+                current=None,
+                total=None,
+            ):
+                if progress_callback is None:
+                    return
+
+                if value is None:
+                    progress_callback(
+                        value=(
+                            index / n_iter
+                        ),
+                        message=(
+                            message
+                            or
+                            f"Tracing Monte-Carlo "
+                            f"{index + 1}/{n_iter}"
+                        ),
+                        current=index + 1,
+                        total=n_iter,
+                    )
+                    return
+
+                progress_callback(
+                    value=(
+                        index + value
+                    ) / n_iter,
+                    message=(
+                        message
+                        or
+                        f"Tracing Monte-Carlo "
+                        f"{index + 1}/{n_iter}"
+                    ),
+                    current=index + 1,
+                    total=n_iter,
+                )
+
             self.trace(
                 progress_callback=
-                    progress_callback
+                    trace_progress
             )
 
             if progress_callback is not None:
