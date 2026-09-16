@@ -151,12 +151,33 @@ def _parameter_specs(
     if inspect.isclass(
         factory
     ):
-        signature = inspect.signature(
-            factory.__init__
-        )
-        parameters = list(
-            signature.parameters.values()
-        )[1:]
+        parameters = []
+        for base in factory.__mro__:
+            if base is object:
+                continue
+            initializer = (
+                base.__dict__.get(
+                    "__init__"
+                )
+            )
+            if initializer is None:
+                continue
+            signature = inspect.signature(
+                initializer
+            )
+            candidate = list(
+                signature.parameters.values()
+            )[1:]
+            parameters = candidate
+            if any(
+                parameter.kind
+                not in {
+                    inspect.Parameter.VAR_POSITIONAL,
+                    inspect.Parameter.VAR_KEYWORD,
+                }
+                for parameter in candidate
+            ):
+                break
     else:
         signature = inspect.signature(
             factory

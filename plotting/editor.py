@@ -369,7 +369,7 @@ class OpticalEditor:
 
         if (
             selected is self.system.source
-            or selected in self.system.detectors
+            or selected in self._detectors()
         ):
             sections.append(
                 (
@@ -753,14 +753,14 @@ class OpticalEditor:
     ):
         self.plot_ax.clear()
 
-        for element in self.system.tracer.elements:
+        for element in self._elements():
             plot_element(
                 element,
                 view=self.view,
                 ax=self.plot_ax,
             )
 
-        for detector in self.system.detectors:
+        for detector in self._detectors():
             plot_element(
                 detector,
                 view=self.view,
@@ -1386,12 +1386,8 @@ class OpticalEditor:
     def _selectable_objects(
         self,
     ):
-        objects = list(
-            self.system.tracer.elements
-        )
-        objects.extend(
-            self.system.detectors
-        )
+        objects = self._elements()
+        objects.extend(self._detectors())
 
         if self.beam_source() is not None:
             objects.insert(
@@ -1400,6 +1396,47 @@ class OpticalEditor:
             )
 
         return objects
+
+    def _elements(
+        self,
+    ):
+        tracer = getattr(
+            self.system,
+            "tracer",
+            None,
+        )
+        if (
+            tracer is not None
+            and hasattr(
+                tracer,
+                "elements",
+            )
+            and tracer.elements is not None
+        ):
+            return list(
+                tracer.elements
+            )
+
+        return list(
+            getattr(
+                self.system,
+                "elements",
+                [],
+            )
+            or []
+        )
+
+    def _detectors(
+        self,
+    ):
+        return list(
+            getattr(
+                self.system,
+                "detectors",
+                [],
+            )
+            or []
+        )
 
     def _cycle_selection(
         self,
