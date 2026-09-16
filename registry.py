@@ -363,10 +363,21 @@ def discover_optic_specs():
             if name in OPTIC_BASES:
                 continue
 
-            if not issubclass(
+            if issubclass(
                 member,
                 Optic,
             ):
+                is_optic = True
+            else:
+                is_optic = callable(
+                    getattr(
+                        member,
+                        "interact",
+                        None,
+                    )
+                )
+
+            if not is_optic:
                 continue
 
             parameter_specs = (

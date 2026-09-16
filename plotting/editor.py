@@ -1045,15 +1045,23 @@ class OpticalEditor:
             )
 
         if mirror_positions is None:
-            wavelength = (
-                self.beam_source().wavelength
-                if self.beam_source()
-                is not None
-                else 632.8e-9
-            )
+            span = 1e-3
+            if hasattr(
+                self.target,
+                "arm_length",
+            ):
+                span = max(
+                    span,
+                    abs(
+                        float(
+                            self.target.arm_length
+                        )
+                    )
+                    * 1e-3,
+                )
             mirror_positions = np.linspace(
-                -wavelength,
-                wavelength,
+                -span,
+                span,
                 9,
             )
 
@@ -1622,6 +1630,16 @@ class OpticalEditor:
                 return np.linalg.norm(
                     point - center
                 )
+
+            if (
+                len(outline) >= 3
+                and self._point_in_polygon(
+                    point,
+                    outline,
+                )
+            ):
+                return 0.0
+
             segments = list(
                 zip(
                     outline[:-1],
@@ -1656,6 +1674,42 @@ class OpticalEditor:
         return np.linalg.norm(
             point - center
         )
+
+    def _point_in_polygon(
+        self,
+        point,
+        polygon,
+    ):
+        x, y = point
+        inside = False
+
+        for start, end in zip(
+            polygon,
+            np.roll(
+                polygon,
+                -1,
+                axis=0,
+            ),
+        ):
+            x1, y1 = start
+            x2, y2 = end
+
+            intersects = (
+                (y1 > y)
+                != (y2 > y)
+            )
+            if not intersects:
+                continue
+
+            x_cross = x1 + (
+                (y - y1)
+                * (x2 - x1)
+                / (y2 - y1)
+            )
+            if x <= x_cross:
+                inside = not inside
+
+        return inside
 
     def _distance_to_segment(
         self,
