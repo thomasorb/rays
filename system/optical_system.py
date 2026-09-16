@@ -198,9 +198,12 @@ class OpticalSystem:
                 emitted,
                 "__len__",
             ):
-                total_rays = len(
-                    emitted
-                )
+                try:
+                    total_rays = len(
+                        emitted
+                    )
+                except TypeError:
+                    total_rays = None
             else:
                 total_rays = None
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import importlib
 import inspect
+import numbers
 from pathlib import Path
 import pkgutil
 import re
@@ -131,13 +132,13 @@ def _parameter_kind(
 
     if isinstance(
         default,
-        int,
+        numbers.Integral,
     ):
         return "int"
 
     if isinstance(
         default,
-        float,
+        numbers.Real,
     ):
         return "float"
 

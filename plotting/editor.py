@@ -1432,11 +1432,7 @@ class OpticalEditor:
         self,
         key,
     ):
-        step = max(
-            0.1,
-            self._source_handle_length()
-            * 0.25,
-        )
+        step = 0.1
         delta_2d = {
             "left": np.array(
                 [-step, 0.0]
