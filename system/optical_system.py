@@ -169,7 +169,7 @@ class OpticalSystem:
                 progress_callback(
                     value=None,
                     message="Starting ray 1/1",
-                    current=0,
+                    current=1,
                     total=1,
                 )
 

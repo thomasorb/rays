@@ -1285,10 +1285,16 @@ class OpticalEditor:
             return
 
         if key == "t":
+            self._mark_event_handled(
+                event
+            )
             self.run_trace()
             return
 
         if key == "m":
+            self._mark_event_handled(
+                event
+            )
             self.run_move()
             return
 
