@@ -1,0 +1,48 @@
+import matplotlib.pyplot as plt
+from scipy.spatial.transform import Rotation
+
+from system.optical_system import OpticalSystem
+from optics.source import Source
+from optics.mirror import Mirror
+from optics.detector import Detector
+from plotting.editor import OpticalEditor
+
+
+def main():
+    system = OpticalSystem()
+
+    source = Source(
+        position=[-20.0, 0.0, 0.0],
+        direction=[1.0, 0.0, 0.0],
+        wavelength=632.8e-9,
+    )
+    system.set_source(source)
+
+    mirror = Mirror(
+        name="M1",
+        position=[0.0, 0.0, 0.0],
+        rotation=Rotation.identity(),
+        width=20.0,
+        height=20.0,
+    )
+    system.add_element(mirror)
+
+    detector = Detector(
+        name="DET1",
+        position=[20.0, 0.0, 0.0],
+        rotation=Rotation.from_euler("y", -90, degrees=True),
+        width=20.0,
+        height=20.0,
+    )
+    system.add_detector(detector)
+
+    OpticalEditor(
+        target=system,
+        view="xz",
+    )
+
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
