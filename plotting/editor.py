@@ -1045,20 +1045,7 @@ class OpticalEditor:
             )
 
         if mirror_positions is None:
-            span = 1e-3
-            if hasattr(
-                self.target,
-                "arm_length",
-            ):
-                span = max(
-                    span,
-                    abs(
-                        float(
-                            self.target.arm_length
-                        )
-                    )
-                    * 1e-3,
-                )
+            span = 1e-7
             mirror_positions = np.linspace(
                 -span,
                 span,
@@ -1356,6 +1343,24 @@ class OpticalEditor:
             "handled",
             True,
         )
+        if hasattr(
+            event,
+            "key",
+        ):
+            event.key = None
+        gui_event = getattr(
+            event,
+            "guiEvent",
+            None,
+        )
+        if (
+            gui_event is not None
+            and hasattr(
+                gui_event,
+                "accept",
+            )
+        ):
+            gui_event.accept()
 
     def _source_handle_length(
         self,
