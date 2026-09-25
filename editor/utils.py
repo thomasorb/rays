@@ -87,27 +87,6 @@ def _material_refractive_index(
     )
 
 
-
-
-def _local_rectangle(
-    width: float,
-    height: float,
-    z: float,
-) -> np.ndarray:
-    half_width = width / 2
-    half_height = height / 2
-
-    return np.array([
-        [-half_width, -half_height, z],
-        [half_width, -half_height, z],
-        [half_width, half_height, z],
-        [-half_width, half_height, z],
-        [-half_width, -half_height, z],
-    ])
-
-
-
-
 def _polyline_distances(
     polyline: np.ndarray,
     point: np.ndarray,
@@ -203,33 +182,5 @@ def _snap_drag_coordinate(
     )
 
 
-def _thick_component_faces(
-    front_position: np.ndarray,
-    rotation: Rotation,
-    width: float,
-    height: float,
-    thickness: float,
-) -> tuple[np.ndarray, np.ndarray]:
-    front = _local_rectangle(
-        width,
-        height,
-        z=0.0,
-    )
-    back = _local_rectangle(
-        width,
-        height,
-        z=thickness,
-    )
-
-    front_world = np.array([
-        rotation.apply(point) + front_position
-        for point in front
-    ])
-    back_world = np.array([
-        rotation.apply(point) + front_position
-        for point in back
-    ])
-
-    return front_world, back_world
 
 

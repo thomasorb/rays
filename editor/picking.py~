@@ -1,0 +1,178 @@
+
+def _element_projection(
+    element,
+    view: str,
+):
+    """
+    Build picking geometry directly from the
+    real optical object.
+
+    Supports:
+
+    - planar optics (Mirror, Detector, Interface)
+    - compound optics (Window, Compensator, PlateBeamSplitter)
+    - future CornerCube support
+    """
+
+    i, j = VIEW_MAP[view]
+
+    #
+    # --------------------------------------------------
+    # Compound optics:
+    #
+    # Window
+    # Compensator
+    # PlateBeamSplitter
+    # --------------------------------------------------
+    #
+
+    if (
+        hasattr(element, "front")
+        and hasattr(element, "back")
+        and hasattr(element.front, "get_outline")
+        and hasattr(element.back, "get_outline")
+    ):
+
+        front = (
+            element.front.get_outline()
+        )
+
+        back = (
+            element.back.get_outline()
+        )
+
+        front_xy = front[:, [i, j]]
+        back_xy = back[:, [i, j]]
+
+        edges = []
+
+        for p_front, p_back in zip(
+            front[:-1],
+            back[:-1],
+        ):
+
+            edges.append(
+                np.array([
+                    p_front[[i, j]],
+                    p_back[[i, j]],
+                ])
+            )
+
+        points = (
+            list(front_xy)
+            + list(back_xy)
+        )
+
+        center = (
+            np.asarray(
+                element.position
+            )[[i, j]]
+        )
+
+        return {
+
+            "kind": "volume",
+
+            "faces": [
+                front_xy,
+                back_xy,
+            ],
+
+            "edges": edges,
+
+            "center": center,
+
+            "points": points,
+        }
+
+    #
+    # --------------------------------------------------
+    # Volume element
+    # --------------------------------------------------
+    #
+
+    if hasattr(
+        element,
+        "get_volume_vertices",
+    ):
+
+        vertices = (
+            element.get_volume_vertices()
+        )
+
+        front = vertices[
+            [0, 1, 2, 3, 0]
+        ]
+
+        back = vertices[
+            [4, 5, 6, 7, 4]
+        ]
+
+        edges = []
+
+        for a, b in [
+            (0, 4),
+            (1, 5),
+            (2, 6),
+            (3, 7),
+        ]:
+
+            edges.append(
+                vertices[[a, b]][:, [i, j]]
+            )
+
+        return {
+
+            "kind": "volume",
+
+            "faces": [
+                front[:, [i, j]],
+                back[:, [i, j]],
+            ],
+
+            "edges": edges,
+
+            "center":
+                vertices.mean(
+                    axis=0
+                )[[i, j]],
+
+            "points":
+                list(vertices[:, [i, j]]),
+        }
+
+    #
+    # --------------------------------------------------
+    # Planar element
+    # --------------------------------------------------
+    #
+
+    if hasattr(
+        element,
+        "get_outline",
+    ):
+
+        outline = (
+            element.get_outline()
+        )
+
+        return {
+
+            "kind": "outline",
+
+            "outline":
+                outline[:, [i, j]],
+
+            "center":
+                element.transform.position[[i, j]],
+
+            "points":
+                list(outline[:, [i, j]]),
+        }
+
+    #
+    # Unsupported object
+    #
+
+    return None
+

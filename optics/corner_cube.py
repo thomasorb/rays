@@ -326,3 +326,12 @@ class CornerCube:
             f"size={self.size}"
             f")"
         )
+
+    def get_outlines(
+        self,
+    ):
+        return [
+            self.m1.get_outline(),
+            self.m2.get_outline(),
+            self.m3.get_outline(),
+        ]

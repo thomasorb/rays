@@ -52,22 +52,25 @@ from .model import (
 
 from .utils import (
     _snap_drag_coordinate,
-    _thick_component_faces,
     _material_refractive_index,
     _build_material,
     _rotation_to_euler,
     _normalized_vector,
     _rotation_from_degrees,
-    _local_rectangle,
     _project_point,
-    _polyline_distances,
-    _point_segment_distance,
-    _snap_drag_coordinate,
-    _thick_component_faces,
-    _material_refractive_index,
-    _build_material,
     _project_vector,
-    )
+    _point_segment_distance,
+)
+
+from plotting.views import (
+    plot_element,
+)
+
+from .picking import (
+    _element_projection,
+    _projection_distance,
+    _projected_points,
+)
 
 class OpticalEditorApp:
     def __init__(
@@ -119,6 +122,7 @@ class OpticalEditorApp:
         self._render_scene(
             preserve_limits=False
         )
+        self.selected_name: str | None = None
 
     def _build_ui(
         self,
@@ -1718,20 +1722,35 @@ class OpticalEditorApp:
         self.axes.clear()
 
         projected_limits = []
-        for index, component in enumerate(
-            self.model.components
-        ):
-            projected = _component_projection(
-                component,
-                self.current_view,
+
+        for element in self.system.elements:
+
+            plot_element(
+                element,
+                view=self.current_view,
+                ax=self.axes,
             )
+
             projected_limits.extend(
-                projected["points"]
+                _projected_points(
+                    element,
+                    self.current_view,
+                )
             )
-            self._draw_component(
-                index,
-                component,
-                projected,
+
+        for detector in self.system.detectors:
+
+            plot_element(
+                detector,
+                view=self.current_view,
+                ax=self.axes,
+            )
+
+            projected_limits.extend(
+                _projected_points(
+                    detector,
+                    self.current_view,
+                )
             )
 
         source_xy = _project_point(
@@ -1818,69 +1837,6 @@ class OpticalEditorApp:
 
         self.canvas.draw_idle()
 
-    def _draw_component(
-        self,
-        index: int,
-        spec: ComponentSpec,
-        projected: dict,
-    ):
-        color = COMPONENT_COLORS[
-            spec.component_type
-        ]
-        selected = index == self.selected_index
-        linewidth = 3.0 if selected else 2.0
-        alpha = 0.25 if selected else 0.15
-
-        if projected["kind"] == "volume":
-            for face in projected["faces"]:
-                self.axes.fill(
-                    face[:, 0],
-                    face[:, 1],
-                    color=color,
-                    alpha=alpha,
-                    zorder=10,
-                )
-                self.axes.plot(
-                    face[:, 0],
-                    face[:, 1],
-                    color=color,
-                    linewidth=linewidth,
-                    zorder=20,
-                )
-
-            for segment in projected["edges"]:
-                self.axes.plot(
-                    segment[:, 0],
-                    segment[:, 1],
-                    color=color,
-                    linewidth=1.0,
-                    alpha=0.8,
-                    zorder=15,
-                )
-        else:
-            outline = projected["outline"]
-            self.axes.plot(
-                outline[:, 0],
-                outline[:, 1],
-                color=color,
-                linewidth=linewidth,
-                zorder=20,
-            )
-
-        label_weight = (
-            "bold"
-            if selected
-            else "normal"
-        )
-        self.axes.text(
-            projected["center"][0],
-            projected["center"][1],
-            spec.name,
-            ha="center",
-            fontsize=8,
-            fontweight=label_weight,
-            zorder=30,
-        )
 
     def _autoscale(
         self,
@@ -2111,7 +2067,9 @@ class OpticalEditorApp:
         x: float,
         y: float,
     ) -> int | None:
+
         tolerance = self._pick_tolerance()
+
         best_index = None
         best_score = np.inf
 
@@ -2120,13 +2078,30 @@ class OpticalEditorApp:
             -1,
             -1,
         ):
-            spec = self.model.components[
-                index
-            ]
-            projected = _component_projection(
-                spec,
+
+            spec = self.model.components[index]
+
+            #
+            # Use the high-level object
+            #
+
+            element = (
+                self.system.display_objects.get(
+                    spec.name
+                )
+            )
+
+            if element is None:
+                continue
+
+            projected = _element_projection(
+                element,
                 self.current_view,
             )
+
+            if projected is None:
+                continue
+
             score = _projection_distance(
                 projected,
                 x,
@@ -2134,6 +2109,7 @@ class OpticalEditorApp:
             )
 
             if score < best_score:
+
                 best_score = score
                 best_index = index
 
@@ -2219,123 +2195,6 @@ class OpticalEditorApp:
                     )
                 )
 
-def _component_projection(
-    spec: ComponentSpec,
-    view: str,
-) -> dict:
-    rotation = _rotation_from_degrees(
-        spec.rotation_deg
-    )
-    position = np.asarray(
-        spec.position,
-        dtype=float,
-    )
-    i, j = VIEW_MAP[view]
-
-    if spec.component_type in THICK_COMPONENTS:
-        front_world, back_world = _thick_component_faces(
-            position,
-            rotation,
-            spec.width,
-            spec.height,
-            spec.thickness,
-        )
-        center = (
-            position
-            + rotation.apply(
-                np.array(
-                    [0.0, 0.0, spec.thickness / 2]
-                )
-            )
-        )
-
-        front_xy = front_world[:, [i, j]]
-        back_xy = back_world[:, [i, j]]
-        edges = []
-
-        for front_point, back_point in zip(
-            front_world[:-1],
-            back_world[:-1],
-        ):
-            edges.append(
-                np.array([
-                    front_point[[i, j]],
-                    back_point[[i, j]],
-                ])
-            )
-
-        points = list(front_xy) + list(back_xy)
-
-        return {
-            "kind": "volume",
-            "faces": [front_xy, back_xy],
-            "edges": edges,
-            "center": center[[i, j]],
-            "points": points,
-        }
-
-    outline = _local_rectangle(
-        spec.width,
-        spec.height,
-        z=0.0,
-    )
-    world_outline = np.array([
-        rotation.apply(point) + position
-        for point in outline
-    ])
-    outline_xy = world_outline[:, [i, j]]
-
-    return {
-        "kind": "outline",
-        "outline": outline_xy,
-        "center": position[[i, j]],
-        "points": list(outline_xy),
-    }
-
-
-def _projection_distance(
-    projected: dict,
-    x: float,
-    y: float,
-) -> float:
-    point = np.array([x, y])
-
-    if projected["kind"] == "volume":
-        for face in projected["faces"]:
-            if MplPath(face).contains_point(
-                point
-            ):
-                return 0.0
-
-        distances = []
-        for face in projected["faces"]:
-            distances.extend(
-                _polyline_distances(
-                    face,
-                    point,
-                )
-            )
-        for edge in projected["edges"]:
-            distances.extend(
-                _polyline_distances(
-                    edge,
-                    point,
-                )
-            )
-        return min(distances)
-
-    outline = projected["outline"]
-    if MplPath(outline).contains_point(
-        point
-    ):
-        return 0.0
-
-    return min(
-        _polyline_distances(
-            outline,
-            point,
-        )
-    )
 
 def launch_optical_editor(
     model: OpticalArchitectureModel | None = None,

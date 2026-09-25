@@ -10,6 +10,8 @@ from optics.bundle_source import CircularBundleSource
 from optics.compensator import Compensator
 from optics.optical_interface import OpticalInterface
 from optics.plate_beamsplitter import PlateBeamSplitter
+from optics.corner_cube import CornerCube
+
 from architectures.classic_michelson import ClassicMichelson
 from system.optical_system import OpticalSystem
 
@@ -241,6 +243,7 @@ class OpticalArchitectureModel:
             "Window": "WIN",
             "Compensator": "COMP",
             "PlateBeamSplitter": "BS",
+            "CornerCube": "CC",
         }
 
         prefix = prefix_map[component_type]
@@ -283,7 +286,10 @@ class OpticalArchitectureModel:
             spec.material2_n = 1.5
             spec.R = 0.5
             spec.T = 0.5
-
+        elif component_type == "CornerCube":
+            spec.width = 40.0
+            spec.height = 40.0
+    
         self.components.append(spec)
         return spec
 
@@ -291,15 +297,23 @@ class OpticalArchitectureModel:
         self,
     ) -> OpticalSystem:
         system = OpticalSystem()
+        system.display_objects = {}
         system.set_source(
             self.build_source()
         )
 
         for spec in self.components:
-            self._add_component_to_system(
+
+            obj = self._add_component_to_system(
                 system,
                 spec,
             )
+
+            if obj is not None:
+
+                system.display_objects[
+                    spec.name
+                ] = obj
 
         return system
 
@@ -333,88 +347,169 @@ class OpticalArchitectureModel:
             ),
         )
 
+    
     def _add_component_to_system(
         self,
-        system: OpticalSystem,
+        system,
         spec: ComponentSpec,
     ):
         rotation = _rotation_from_degrees(
             spec.rotation_deg
         )
 
+        #
+        # Mirror
+        #
+
         if spec.component_type == "Mirror":
-            system.add_element(
-                Mirror(
-                    name=spec.name,
-                    position=spec.position,
-                    rotation=rotation,
-                    width=spec.width,
-                    height=spec.height,
-                )
+
+            mirror = Mirror(
+                name=spec.name,
+                position=spec.position,
+                rotation=rotation,
+                width=spec.width,
+                height=spec.height,
             )
-            return
+
+            system.add_element(
+                mirror
+            )
+
+            return mirror
+
+        #
+        # Detector
+        #
 
         if spec.component_type == "Detector":
-            system.add_detector(
-                Detector(
-                    name=spec.name,
-                    position=spec.position,
-                    rotation=rotation,
-                    width=spec.width,
-                    height=spec.height,
-                )
+
+            detector = Detector(
+                name=spec.name,
+                position=spec.position,
+                rotation=rotation,
+                width=spec.width,
+                height=spec.height,
             )
-            return
+
+            system.add_detector(
+                detector
+            )
+
+            return detector
+
+        #
+        # Optical interface
+        #
 
         if spec.component_type == "OpticalInterface":
-            system.add_element(
-                OpticalInterface(
-                    name=spec.name,
-                    position=spec.position,
-                    rotation=rotation,
-                    width=spec.width,
-                    height=spec.height,
-                    material1=_build_material(
-                        spec.material1,
-                        spec.material1_n,
-                    ),
-                    material2=_build_material(
-                        spec.material2,
-                        spec.material2_n,
-                    ),
-                    R=spec.R,
-                    T=spec.T,
-                    phase_reflection=spec.phase_reflection,
-                )
+
+            interface = OpticalInterface(
+                name=spec.name,
+                position=spec.position,
+                rotation=rotation,
+                width=spec.width,
+                height=spec.height,
+                material1=_build_material(
+                    spec.material1,
+                    spec.material1_n,
+                ),
+                material2=_build_material(
+                    spec.material2,
+                    spec.material2_n,
+                ),
+                R=spec.R,
+                T=spec.T,
+                phase_reflection=spec.phase_reflection,
             )
-            return
+
+            system.add_element(
+                interface
+            )
+
+            return interface
+
+        #
+        # Window
+        #
 
         if spec.component_type == "Window":
-            self._build_thick_component(
+
+            window = self._build_thick_component(
                 spec,
                 rotation,
                 Window,
-            ).add_to_system(system)
-            return
+            )
+
+            window.add_to_system(
+                system
+            )
+
+            return window
+
+        #
+        # Compensator
+        #
 
         if spec.component_type == "Compensator":
-            self._build_thick_component(
+
+            compensator = self._build_thick_component(
                 spec,
                 rotation,
                 Compensator,
-            ).add_to_system(system)
-            return
+            )
+
+            compensator.add_to_system(
+                system
+            )
+
+            return compensator
+
+        #
+        # Beam splitter
+        #
 
         if spec.component_type == "PlateBeamSplitter":
-            self._build_thick_component(
+
+            beamsplitter = self._build_thick_component(
                 spec,
                 rotation,
                 PlateBeamSplitter,
-            ).add_to_system(system)
-            return
+            )
 
+            beamsplitter.add_to_system(
+                system
+            )
+
+            return beamsplitter
+
+        #
+        # Corner cube
+        #
+
+        if spec.component_type == "CornerCube":
+
+            cube = CornerCube(
+
+                name=spec.name,
+
+                position=spec.position,
+
+                size=spec.width,
+
+                optical_axis=rotation.apply(
+                    [1, 0, 0]
+                ),
+            )
+
+            cube.add_to_system(
+                system
+            )
+
+            return cube
+        
         raise ValueError(
-            f"Unsupported component type: {spec.component_type}"
+            f"Unsupported component type: "
+            f"{spec.component_type}"
         )
 
     def _build_thick_component(
