@@ -1,0 +1,47 @@
+from tkinter import ttk
+
+
+DEFAULT_THEME = "darkly"
+
+DEFAULT_FONT = (
+    "Noto Sans",
+    9,
+)
+
+
+def configure_theme():
+
+    style = ttk.Style()
+
+    #
+    # Global font
+    #
+
+    style.configure(
+        ".",
+        font=DEFAULT_FONT,
+    )
+
+    #
+    # Notebook tabs
+    #
+
+    style.configure(
+        "TNotebook.Tab",
+        padding=(10, 4),
+    )
+
+    #
+    # Section headers
+    #
+
+    style.configure(
+        "Heading.TLabel",
+        font=(
+            DEFAULT_FONT[0],
+            10,
+            "bold",
+        )
+    )
+
+    return style

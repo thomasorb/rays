@@ -11,9 +11,20 @@ from matplotlib.figure import Figure
 from matplotlib.path import Path as MplPath
 from scipy.spatial.transform import Rotation
 
+from .theme import (
+    configure_theme,
+)
+
 try:
     import tkinter as tk
-    from tkinter import filedialog, messagebox, ttk
+    from tkinter import (
+        ttk,
+        filedialog,
+        messagebox,
+    )
+
+    import ttkbootstrap as tb
+
     from matplotlib.backends.backend_tkagg import (
         FigureCanvasTkAgg,
     )
@@ -39,6 +50,10 @@ from .constants import (
     AXIS_NAMES,
     AXIS_INDEX,
     COMPONENT_COLORS,
+)
+
+from .theme import (
+    APP_FONT,
 )
 
 from .specs import (
@@ -330,6 +345,7 @@ class OpticalEditorApp:
             textvariable=self.add_type_var,
             values=COMPONENT_TYPES,
             state="readonly",
+            font=APP_FONT,
         ).grid(
             row=0,
             column=0,
@@ -365,7 +381,7 @@ class OpticalEditorApp:
         self.panel_title = ttk.Label(
             self.panel_frame,
             text="Component",
-            font=("", 11, "bold"),
+            font=(APP_FONT[0], APP_FONT[1] + 2, "bold"),
         )
         self.panel_title.grid(
             row=1,
@@ -391,6 +407,10 @@ class OpticalEditorApp:
             self.debug_tab,
             wrap="word",
             state="disabled",
+            font=APP_FONT,
+            bg="#1e1e1e",
+            fg="#dddddd",
+            insertbackground="#dddddd",
         )
         self.debug_text.pack(
             fill="both",
@@ -1032,20 +1052,28 @@ class OpticalEditorApp:
             padx=(0, 8),
             pady=2,
         )
+
         entry = ttk.Entry(
             self.panel_body,
             textvariable=variable,
+
+            font=APP_FONT,
         )
+
         entry.grid(
             row=row,
             column=1,
             sticky="ew",
             pady=2,
         )
+
         entry.bind(
             "<Return>",
-            lambda _event: self._apply_active_panel(),
+            lambda _event: (
+                self._apply_active_panel()
+            ),
         )
+
 
     def _add_combobox(
         self,
@@ -1065,18 +1093,26 @@ class OpticalEditorApp:
             padx=(0, 8),
             pady=2,
         )
+
         combobox = ttk.Combobox(
             self.panel_body,
+
             textvariable=variable,
+
             values=values,
+
             state="readonly",
+
+            font=APP_FONT,
         )
+
         combobox.grid(
             row=row,
             column=1,
             sticky="ew",
             pady=2,
         )
+
         combobox.bind(
             "<<ComboboxSelected>>",
             lambda _event: (
@@ -2204,7 +2240,14 @@ def launch_optical_editor(
             "tkinter is required to launch the optical editor."
         ) from TK_IMPORT_ERROR
 
-    root = tk.Tk()
+    import ttkbootstrap as tb
+
+    root = tb.Window(
+        themename="darkly"
+    )
+
+    configure_theme()
+    
     OpticalEditorApp(
         root=root,
         model=model,
