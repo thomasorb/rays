@@ -1,11 +1,12 @@
 from tkinter import ttk
+from .settings import (
+    get_setting,
+)
 
 
 # ==========================================================
 # Theme configuration
 # ==========================================================
-
-THEME_NAME = "darkly"
 
 FONT_FAMILY = "Noto Sans"
 
@@ -16,7 +17,10 @@ APP_FONT = (
     FONT_SIZE,
 )
 
-
+THEME_NAME = get_setting(
+    "theme",
+    "darkly",
+)
 def configure_theme():
 
     style = ttk.Style()

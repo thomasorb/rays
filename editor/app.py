@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import io
+from pathlib import Path
+
 import json
 from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import asdict, dataclass, field
@@ -54,11 +56,17 @@ from .constants import (
 
 from .theme import (
     APP_FONT,
+    THEME_NAME,
 )
 
 from .specs import (
     SourceSpec,
     ComponentSpec,
+)
+
+from .settings import (
+    set_setting,
+    get_setting,
 )
 
 from .model import (
@@ -79,6 +87,7 @@ from .utils import (
 
 from plotting.views import (
     plot_element,
+    plot_ray,
 )
 
 from .picking import (
@@ -105,7 +114,15 @@ class OpticalEditorApp:
             else OpticalArchitectureModel()
         )
 
+        self.current_file: str | None = get_setting(
+            "last_architecture"
+        )
+        
         self.current_view = "xz"
+        self.current_view = get_setting(
+            "last_view",
+            "xz",
+        )
         self.current_rays = None
         self.selected_index: int | None = None
         self.panel_mode = "component"
@@ -155,19 +172,21 @@ class OpticalEditorApp:
             self.root,
             padding=6,
         )
+          
         self.toolbar.grid(
             row=0,
             column=0,
             sticky="ew",
         )
 
+        self._build_menu()
+
         for index, label in enumerate(
-            ["MOVE", "TRACE", "QUIT", "XY", "XZ", "YZ"]
+            ["XY", "XZ", "YZ", "Move", "Trace"]
         ):
             command = {
-                "MOVE": self._show_move_panel,
-                "TRACE": self._show_trace_panel,
-                "QUIT": self.root.destroy,
+                "Move": self._show_move_panel,
+                "Trace": self._show_trace_panel,
                 "XY": lambda: self._set_view("xy"),
                 "XZ": lambda: self._set_view("xz"),
                 "YZ": lambda: self._set_view("yz"),
@@ -260,6 +279,14 @@ class OpticalEditorApp:
             figsize=(10, 7),
             dpi=100,
         )
+
+        self.figure.subplots_adjust(
+            left=0.08,
+            right=0.92,
+            bottom=0.08,
+            top=0.92,
+        )
+
         self.axes = self.figure.add_subplot(
             111
         )
@@ -301,29 +328,6 @@ class OpticalEditorApp:
         static_controls.columnconfigure(
             1,
             weight=1,
-        )
-
-        ttk.Button(
-            static_controls,
-            text="Save",
-            command=self._save_architecture,
-        ).grid(
-            row=0,
-            column=0,
-            sticky="ew",
-            padx=(0, 4),
-            pady=(0, 4),
-        )
-        ttk.Button(
-            static_controls,
-            text="Load",
-            command=self._load_architecture,
-        ).grid(
-            row=0,
-            column=1,
-            sticky="ew",
-            padx=(4, 0),
-            pady=(0, 4),
         )
 
         add_row = ttk.Frame(
@@ -390,17 +394,64 @@ class OpticalEditorApp:
             pady=(10, 6),
         )
 
-        self.panel_body = ttk.Frame(
-            self.panel_frame
+        self.panel_canvas = tk.Canvas(
+            self.panel_frame,
+            highlightthickness=0,
         )
-        self.panel_body.grid(
+
+        self.panel_canvas.bind_all(
+            "<MouseWheel>",
+            self._on_panel_mousewheel,
+        )
+
+
+        self.panel_canvas.bind(
+            "<Configure>",
+            self._on_panel_canvas_resize,
+        )
+
+        self.panel_scrollbar = ttk.Scrollbar(
+            self.panel_frame,
+            orient="vertical",
+            command=self.panel_canvas.yview,
+        )
+
+        self.panel_body = ttk.Frame(
+            self.panel_canvas,
+        )
+
+        self.panel_body.columnconfigure(
+            1,
+            weight=1,
+        )
+
+        self.panel_window = (
+            self.panel_canvas.create_window(
+                (0, 0),
+                window=self.panel_body,
+                anchor="nw",
+            )
+        )
+
+        self.panel_canvas.configure(
+            yscrollcommand=self.panel_scrollbar.set
+        )
+
+        self.panel_canvas.grid(
             row=2,
             column=0,
             sticky="nsew",
         )
-        self.panel_body.columnconfigure(
-            1,
-            weight=1,
+
+        self.panel_scrollbar.grid(
+            row=2,
+            column=1,
+            sticky="ns",
+        )
+
+        self.panel_body.bind(
+            "<Configure>",
+            self._update_panel_scrollregion,
         )
 
         self.debug_text = tk.Text(
@@ -431,6 +482,63 @@ class OpticalEditorApp:
         self.debug_text.see("end")
         self.debug_text.configure(
             state="disabled"
+        )
+
+    def _build_menu(
+        self,
+    ):
+
+        menubar = tk.Menu(
+            self.root,
+            font=APP_FONT,
+        )
+
+        #
+        # FILE
+        #
+
+        file_menu = tk.Menu(
+            menubar,
+            tearoff=False,
+            font=APP_FONT,
+        )
+
+        file_menu.add_command(
+            label="New",
+            command=self._new_architecture,
+        )
+
+        file_menu.add_command(
+            label="Open...",
+            command=self._load_architecture,
+        )
+
+        file_menu.add_separator()
+
+        file_menu.add_command(
+            label="Save",
+            command=self._save_architecture,
+        )
+
+        file_menu.add_command(
+            label="Save As...",
+            command=self._save_architecture_as,
+        )
+
+        file_menu.add_separator()
+
+        file_menu.add_command(
+            label="Quit",
+            command=self._quit_application,
+        )
+
+        menubar.add_cascade(
+            label="File",
+            menu=file_menu,
+        )
+
+        self.root.config(
+            menu=menubar
         )
 
     def _run_logged(
@@ -471,12 +579,49 @@ class OpticalEditorApp:
         for child in self.panel_body.winfo_children():
             child.destroy()
 
+    def _update_panel_scrollregion(
+        self,
+        event=None,
+    ):
+
+        self.panel_canvas.configure(
+            scrollregion=
+            self.panel_canvas.bbox("all")
+        )
+
+    def _on_panel_mousewheel(
+        self,
+        event,
+    ):
+
+        self.panel_canvas.yview_scroll(
+            int(
+                -event.delta / 120
+            ),
+            "units",
+        )
+
+    def _on_panel_canvas_resize(
+        self,
+        event,
+    ):
+        """
+        Keep the inner frame width
+        synchronized with the canvas.
+        """
+
+        self.panel_canvas.itemconfigure(
+            self.panel_window,
+            width=event.width,
+        )
+
     def _show_component_panel(
         self,
     ):
         self.panel_mode = "component"
         self.panel_title.configure(
-            text="Component parameters"
+            text="Component parameters",
+            font=(APP_FONT[0], APP_FONT[1], "bold")
         )
         self._clear_panel()
         self.component_vars = {}
@@ -1676,7 +1821,7 @@ class OpticalEditorApp:
             f"Removed component {removed.name}."
         )
 
-    def _save_architecture(
+    def _save_architecture_as(
         self,
     ):
         path = filedialog.asksaveasfilename(
@@ -1697,6 +1842,33 @@ class OpticalEditorApp:
             ),
         )
 
+        self.current_file = path
+
+        set_setting(
+            "last_architecture",
+            path,
+        )
+
+
+    def _save_architecture(
+        self,
+    ):
+
+        if not self.current_file:
+
+            self._save_architecture_as()
+
+            return
+
+        self.model.save_json(
+            self.current_file
+        )
+
+        self._log(
+            f"Saved {self.current_file}"
+        )
+
+
     def _load_architecture(
         self,
     ):
@@ -1716,6 +1888,12 @@ class OpticalEditorApp:
             )
             model.build_system()
             self.model = model
+            self.current_file = path
+
+            set_setting(
+                "last_architecture",
+                path,
+            )
             self.selected_index = None
             self.move_component_var.set("")
             self.move_detector_1_var.set("")
@@ -1734,6 +1912,23 @@ class OpticalEditorApp:
             ),
         )
 
+    def _new_architecture(
+        self,
+    ):
+
+        self.model = OpticalArchitectureModel()
+        self.selected_index = None
+        self.current_file = None
+        self._clear_rays()
+        self._rebuild_system()
+        self._show_component_panel()
+        self._render_scene(
+            preserve_limits=False
+        )
+        self._log(
+            "Created new architecture."
+        )
+        
     def _find_component_by_name(
         self,
         name: str,
@@ -1806,7 +2001,7 @@ class OpticalEditorApp:
             [source_xy[1]],
             marker="*",
             color="gold",
-            markersize=12,
+            markersize=14,
             zorder=40,
         )
         self.axes.annotate(
@@ -1828,27 +2023,29 @@ class OpticalEditorApp:
         )
 
         if self.current_rays is not None:
+
             for ray in self.current_rays:
+
+                plot_ray(
+                    ray,
+                    view=self.current_view,
+                    ax=self.axes,
+                )
+
                 path = np.asarray(
                     ray.path
                 )
+
                 i, j = VIEW_MAP[
                     self.current_view
                 ]
-                self.axes.plot(
-                    path[:, i],
-                    path[:, j],
-                    color="black",
-                    alpha=0.4,
-                    linewidth=1.0,
-                    zorder=5,
-                )
+
                 projected_limits.extend(
                     path[:, [i, j]]
                 )
 
         self.axes.grid(True)
-        self.axes.set_aspect("equal")
+        self.axes.set_aspect("equal", adjustable='datalim')
         self.axes.set_title(
             self.current_view.upper()
         )
@@ -1919,6 +2116,35 @@ class OpticalEditorApp:
         self,
         event,
     ):
+
+        #
+        # Source click
+        #
+
+        if self._pick_source(
+            event.xdata,
+            event.ydata,
+        ):
+
+            self.selected_index = None
+
+            self._show_trace_panel()
+
+            self.drag_state = {
+                "mode": "move_source",
+
+                "start_xy": (
+                    event.xdata,
+                    event.ydata,
+                ),
+
+                "start_position": list(
+                    self.model.source.position
+                ),
+            }
+
+            return
+
         if event.inaxes != self.axes or event.button != 1:
             return
 
@@ -1930,6 +2156,29 @@ class OpticalEditorApp:
             event.ydata,
         )
 
+        if picked is None:
+
+            #
+            # Pan view
+            #
+
+            self.drag_state = {
+
+                "mode": "pan",
+
+                "start_xy": (
+                    event.x,
+                    event.y,
+                ),
+
+                "xlim": self.axes.get_xlim(),
+
+                "ylim": self.axes.get_ylim(),
+            }
+
+            return
+
+        
         if picked is None:
             return
 
@@ -1974,9 +2223,128 @@ class OpticalEditorApp:
         if event.inaxes != self.axes:
             return
 
+        #
+        # =================================================
+        # PAN VIEW
+        # =================================================
+        #
+
+        if self.drag_state["mode"] == "pan":
+
+            dx_pixels = (
+                event.x
+                - self.drag_state["start_xy"][0]
+            )
+
+            dy_pixels = (
+                event.y
+                - self.drag_state["start_xy"][1]
+            )
+
+            xlim = self.drag_state["xlim"]
+            ylim = self.drag_state["ylim"]
+
+            width_pixels = max(
+                self.axes.bbox.width,
+                1,
+            )
+
+            height_pixels = max(
+                self.axes.bbox.height,
+                1,
+            )
+
+            dx_world = (
+                dx_pixels
+                * (xlim[1] - xlim[0])
+                / width_pixels
+            )
+
+            dy_world = (
+                dy_pixels
+                * (ylim[1] - ylim[0])
+                / height_pixels
+            )
+
+            self.axes.set_xlim(
+                xlim[0] - dx_world,
+                xlim[1] - dx_world,
+            )
+
+            self.axes.set_ylim(
+                ylim[0] - dy_world,
+                ylim[1] - dy_world,
+            )
+
+            self.canvas.draw_idle()
+
+            return
+
+        #
+        # Everything below needs
+        # world coordinates.
+        #
+
         if event.xdata is None or event.ydata is None:
             return
 
+        #
+        # Source dragging
+        #
+
+        if self.drag_state["mode"] == "move_source":
+
+            i, j = VIEW_MAP[
+                self.current_view
+            ]
+
+            position = list(
+                self.drag_state[
+                    "start_position"
+                ]
+            )
+
+            dx = (
+                event.xdata
+                - self.drag_state[
+                    "start_xy"
+                ][0]
+            )
+
+            dy = (
+                event.ydata
+                - self.drag_state[
+                    "start_xy"
+                ][1]
+            )
+
+            position[i] = (
+                _snap_drag_coordinate(
+                    position[i] + dx
+                )
+            )
+
+            position[j] = (
+                _snap_drag_coordinate(
+                    position[j] + dy
+                )
+            )
+
+            self.model.source.position = (
+                position
+            )
+
+            self._clear_rays()
+            self._rebuild_system()
+
+            if self.panel_mode == "trace":
+
+                self._update_trace_vars_from_source()
+
+            self._render_scene()
+
+            return
+        
         spec = self.model.components[
             self.drag_state["index"]
         ]
@@ -2098,6 +2466,27 @@ class OpticalEditorApp:
         )
         self.canvas.draw_idle()
 
+    def _pick_source(
+        self,
+        x: float,
+        y: float,
+    ) -> bool:
+
+        source_xy = _project_point(
+            self.model.source.position,
+            self.current_view,
+        )
+
+        tolerance = self._pick_tolerance()
+
+        return (
+            np.linalg.norm(
+                np.array([x, y])
+                - source_xy
+            )
+            <= tolerance
+        )
+        
     def _pick_component(
         self,
         x: float,
@@ -2167,6 +2556,85 @@ class OpticalEditorApp:
             ),
         )
 
+    def _update_trace_vars_from_source(
+        self,
+    ):
+        """
+        Update the trace panel without
+        rebuilding all widgets.
+        """
+
+        if not self.trace_vars:
+            return
+
+        source = self.model.source
+
+        #
+        # Kind
+        #
+
+        self.trace_vars["kind"].set(
+            source.kind
+        )
+
+        #
+        # Position
+        #
+
+        for axis, value in zip(
+            AXIS_NAMES,
+            source.position,
+        ):
+
+            self.trace_vars[
+                f"position_{axis}"
+            ].set(
+                round(
+                    float(value),
+                    6,
+                )
+            )
+
+        #
+        # Direction
+        #
+
+        for axis, value in zip(
+            AXIS_NAMES,
+            source.direction,
+        ):
+
+            self.trace_vars[
+                f"direction_{axis}"
+            ].set(
+                round(
+                    float(value),
+                    6,
+                )
+            )
+
+        #
+        # Other parameters
+        #
+
+        self.trace_vars[
+            "wavelength"
+        ].set(
+            source.wavelength
+        )
+
+        self.trace_vars[
+            "radius"
+        ].set(
+            source.radius
+        )
+
+        self.trace_vars[
+            "n_rays"
+        ].set(
+            source.n_rays
+        )
+
     def _update_component_vars_from_spec(
         self,
         spec: ComponentSpec,
@@ -2231,25 +2699,124 @@ class OpticalEditorApp:
                     )
                 )
 
+    def _quit_application(
+        self,
+    ):
+        """
+        Clean application shutdown.
+
+        Future responsibilities:
+            - save window geometry
+            - save current view
+            - save expanded panels
+            - prompt for unsaved changes
+        """
+
+        try:
+
+            #
+            # Save current view
+            #
+
+            set_setting(
+                "last_view",
+                self.current_view,
+            )
+
+            #
+            # Save window geometry
+            #
+
+            set_setting(
+                "window_geometry",
+                self.root.geometry(),
+            )
+
+            #
+            # Save current file
+            #
+
+            if getattr(
+                self,
+                "current_file",
+                None,
+            ):
+
+                set_setting(
+                    "last_architecture",
+                    self.current_file,
+                )
+
+        except Exception as exc:
+
+            #
+            # Never block application closure
+            #
+
+            self._log(
+                f"Warning while saving settings: {exc}"
+            )
+
+        self.root.destroy()
 
 def launch_optical_editor(
-    model: OpticalArchitectureModel | None = None,
+    model=None,
 ):
-    if TK_IMPORT_ERROR is not None:
-        raise RuntimeError(
-            "tkinter is required to launch the optical editor."
-        ) from TK_IMPORT_ERROR
 
-    import ttkbootstrap as tb
+    #
+    # Load previous design
+    #
+
+    if model is None:
+
+        last_file = get_setting(
+            "last_architecture"
+        )
+
+        if last_file:
+
+            path = Path(
+                last_file
+            )
+
+            if path.exists():
+
+                try:
+
+                    model = (
+                        OpticalArchitectureModel
+                        .load_json(path)
+                    )
+
+                except Exception:
+
+                    pass
 
     root = tb.Window(
-        themename="darkly"
+        themename=THEME_NAME
     )
 
+    geometry = get_setting(
+        "window_geometry"
+    )
+
+    if geometry:
+
+        try:
+
+            root.geometry(
+                geometry
+            )
+
+        except Exception:
+
+            pass
+
     configure_theme()
-    
+
     OpticalEditorApp(
         root=root,
         model=model,
     )
+
     root.mainloop()

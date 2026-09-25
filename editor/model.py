@@ -287,8 +287,8 @@ class OpticalArchitectureModel:
             spec.R = 0.5
             spec.T = 0.5
         elif component_type == "CornerCube":
-            spec.width = 40.0
-            spec.height = 40.0
+            spec.width = 10.0
+            spec.height = 10.0
     
         self.components.append(spec)
         return spec

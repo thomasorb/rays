@@ -1,0 +1,15 @@
+# editor/settings.py
+
+from pathlib import Path
+
+
+CONFIG_DIR = (
+        Path.home()
+        / ".config"
+        / "rays"
+    )
+
+CONFIG_FILE = (
+        CONFIG_DIR
+        / "editor.json"
+    )

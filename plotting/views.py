@@ -29,34 +29,6 @@ def _get_axes(view):
 # Rays
 # ==========================================================
 
-def plot_ray(
-    ray,
-    view="xz",
-    ax=None,
-    **kwargs,
-):
-    """
-    Plot one ray.
-    """
-
-    if ax is None:
-        fig, ax = plt.subplots()
-
-    i, j = _get_axes(view)
-
-    path = np.asarray(ray.path)
-
-    ax.plot(
-        path[:, i],
-        path[:, j],
-        "-o",
-        **kwargs,
-    )
-
-    ax.set_aspect("equal")
-
-    return ax
-
 
 def plot_ray(
     ray,
@@ -77,15 +49,10 @@ def plot_ray(
     ax.plot(
         path[:, i],
         path[:, j],
-
         "-",
-
         lw=1,
-
-        color="black",
-
-        alpha=0.4,
-
+        color="crimson",
+        alpha=0.1,
         zorder=1,
     )
 
