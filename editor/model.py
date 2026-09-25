@@ -494,7 +494,7 @@ class OpticalArchitectureModel:
 
                 position=spec.position,
 
-                size=spec.width,
+                aperture=spec.width,
 
                 optical_axis=rotation.apply(
                     [1, 0, 0]

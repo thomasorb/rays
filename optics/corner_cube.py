@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+from matplotlib.patches import Circle
 
 from scipy.spatial.transform import Rotation
 
@@ -11,19 +12,24 @@ class CornerCube:
     """
     Corner cube retroreflector.
 
-    The corner vertex is located at position.
+    Parameters
+    ----------
+    position
+        Corner vertex position.
 
-    optical_axis defines the viewing direction
-    of the cube.
+    aperture
+        Effective clear aperture.
 
-    Default:
-        optical_axis = [1,0,0]
+    optical_axis
+        Viewing direction of the cube.
 
-    Internal geometry:
+    Notes
+    -----
+    The public parameter is the clear
+    aperture.
 
-        three mutually orthogonal mirrors
-
-    whose bisector points along optical_axis.
+    Internal mirror dimensions are
+    automatically derived.
     """
 
     def __init__(
@@ -34,14 +40,50 @@ class CornerCube:
 
         position,
 
-        size,
+        aperture=None,
 
-        optical_axis=(1,0,0),
+        size=None,
+
+        optical_axis=(1, 0, 0),
     ):
 
-        self.name = name
+        #
+        # Backward compatibility
+        #
 
-        self.size = float(size)
+        if aperture is None:
+
+            if size is None:
+
+                raise ValueError(
+                    "CornerCube requires "
+                    "aperture or size."
+                )
+
+            aperture = size
+
+        #
+        # Public parameter
+        #
+
+        self.aperture = float(
+            aperture
+        )
+
+        #
+        # Internal mirror size
+        #
+        # For a cubic corner cube:
+        #
+        # mirror_size = √2 × aperture
+        #
+
+        self.mirror_size = (
+            np.sqrt(3) / 2
+            * self.aperture
+        )
+
+        self.name = name
 
         self._position = np.asarray(
             position,
@@ -49,9 +91,7 @@ class CornerCube:
         )
 
         #
-        # ------------------------------------
         # Optical axis
-        # ------------------------------------
         #
 
         optical_axis = np.asarray(
@@ -68,16 +108,11 @@ class CornerCube:
         )
 
         #
-        # ------------------------------------
-        # Local corner cube axis
-        #
-        # Bisector of the three reflecting
-        # planes.
-        # ------------------------------------
+        # Local cube bisector
         #
 
         local_axis = np.array(
-            [1,1,1],
+            [1, 1, 1],
             dtype=float,
         )
 
@@ -85,45 +120,34 @@ class CornerCube:
             local_axis
         )
 
-        #
-        # ------------------------------------
-        # Rotation aligning cube axis to
-        # requested optical axis.
-        # ------------------------------------
-        #
-
-        rotation, _ = Rotation.align_vectors(
-            [optical_axis],
-            [local_axis],
+        rotation, _ = (
+            Rotation.align_vectors(
+                [optical_axis],
+                [local_axis],
+            )
         )
 
         self.rotation = rotation
 
         #
-        # ------------------------------------
-        # Face centres in local coordinates
-        # ------------------------------------
+        # Mirror centres
         #
 
-        s = self.size / 2
+        s = (
+            self.mirror_size / 2
+        )
 
         p1_local = np.array(
-            [s,0,0]
+            [s, 0, 0]
         )
 
         p2_local = np.array(
-            [0,s,0]
+            [0, s, 0]
         )
 
         p3_local = np.array(
-            [0,0,s]
+            [0, 0, s]
         )
-
-        #
-        # ------------------------------------
-        # Face centres in world frame
-        # ------------------------------------
-        #
 
         p1 = (
             rotation.apply(
@@ -150,15 +174,7 @@ class CornerCube:
         )
 
         #
-        # ------------------------------------
         # Mirror orientations
-        #
-        # Local normals:
-        #
-        # +X
-        # +Y
-        # +Z
-        # ------------------------------------
         #
 
         rot_x = (
@@ -184,9 +200,7 @@ class CornerCube:
         rot_z = rotation
 
         #
-        # ------------------------------------
         # Mirrors
-        # ------------------------------------
         #
 
         self.m1 = Mirror(
@@ -197,8 +211,8 @@ class CornerCube:
 
             rotation=rot_x,
 
-            width=self.size,
-            height=self.size,
+            width=self.mirror_size,
+            height=self.mirror_size,
         )
 
         self.m2 = Mirror(
@@ -209,8 +223,8 @@ class CornerCube:
 
             rotation=rot_y,
 
-            width=self.size,
-            height=self.size,
+            width=self.mirror_size,
+            height=self.mirror_size,
         )
 
         self.m3 = Mirror(
@@ -221,19 +235,36 @@ class CornerCube:
 
             rotation=rot_z,
 
-            width=self.size,
-            height=self.size,
+            width=self.mirror_size,
+            height=self.mirror_size,
         )
 
     # ==================================================
-    # POSITION
+    # Backward compatibility
+    # ==================================================
+
+    @property
+    def size(
+        self,
+    ):
+        """
+        Backward compatibility.
+
+        Old code may still query:
+
+            cc.size
+        """
+
+        return self.mirror_size
+
+    # ==================================================
+    # Position
     # ==================================================
 
     @property
     def position(
         self,
     ):
-
         return self._position
 
     @position.setter
@@ -257,7 +288,7 @@ class CornerCube:
         )
 
     # ==================================================
-    # TRANSLATION
+    # Translation
     # ==================================================
 
     def translate(
@@ -277,7 +308,7 @@ class CornerCube:
         self.m3.transform.position += delta
 
     # ==================================================
-    # SYSTEM
+    # System
     # ==================================================
 
     def add_to_system(
@@ -297,8 +328,156 @@ class CornerCube:
             self.m3
         )
 
+
+    def draw_overlay(
+        self,
+        view,
+        ax,
+    ):
+        """
+        Draw projected clear aperture.
+        """
+
+        from plotting.views import VIEW_MAP
+
+        i, j = VIEW_MAP[view]
+
+        #
+        # Circle radius
+        #
+
+        r = self.aperture / 2
+
+        #
+        # Plane normal
+        #
+
+        n = self.optical_axis
+
+        #
+        # Build orthonormal basis
+        #
+
+        if abs(n[2]) < 0.9:
+
+            reference = np.array(
+                [0, 0, 1]
+            )
+
+        else:
+
+            reference = np.array(
+                [0, 1, 0]
+            )
+
+        u = np.cross(
+            n,
+            reference,
+        )
+
+        u /= np.linalg.norm(
+            u
+        )
+
+        v = np.cross(
+            n,
+            u,
+        )
+
+        v /= np.linalg.norm(
+            v
+        )
+
+        #
+        # Circle points
+        #
+
+        angles = np.linspace(
+            0,
+            2*np.pi,
+            200,
+        )
+
+        circle = []
+
+        for t in angles:
+
+            point = (
+
+                self.position
+
+                + r*np.cos(t)*u
+
+                + r*np.sin(t)*v
+            )
+
+            circle.append(
+                point
+            )
+
+        circle = np.asarray(
+            circle
+        )
+
+        #
+        # Project
+        #
+
+        ax.plot(
+
+            circle[:, i],
+
+            circle[:, j],
+
+            "--",
+
+            color="cyan",
+
+            linewidth=1.5,
+
+            alpha=0.8,
+
+            zorder=25,
+        )
+
+        #
+        # Vertex
+        #
+
+        ax.plot(
+
+            self.position[i],
+
+            self.position[j],
+
+            marker="+",
+
+            color="cyan",
+
+            markersize=8,
+
+            zorder=30,
+        )
+
     # ==================================================
-    # UTILITIES
+    # Editor support
+    # ==================================================
+
+    def get_outlines(
+        self,
+    ):
+
+        return [
+
+            self.m1.get_outline(),
+
+            self.m2.get_outline(),
+
+            self.m3.get_outline(),
+        ]
+
+    # ==================================================
+    # Utilities
     # ==================================================
 
     @property
@@ -323,15 +502,7 @@ class CornerCube:
             f"name={self.name}, "
             f"position={self.position}, "
             f"axis={self.optical_axis}, "
-            f"size={self.size}"
+            f"aperture={self.aperture}, "
+            f"mirror_size={self.mirror_size}"
             f")"
         )
-
-    def get_outlines(
-        self,
-    ):
-        return [
-            self.m1.get_outline(),
-            self.m2.get_outline(),
-            self.m3.get_outline(),
-        ]

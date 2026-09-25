@@ -3,7 +3,6 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 # ==========================================================
 # Generic utilities
 # ==========================================================
@@ -125,7 +124,6 @@ def plot_element(
     #
     # Surfaces
     #
-
     elif hasattr(
         element,
         "get_outline",
@@ -148,6 +146,7 @@ def plot_element(
             zorder=20,
         )
 
+   
     #
     # Label
     #
@@ -170,6 +169,18 @@ def plot_element(
 
         zorder=30,
     )
+
+    #
+    # Optional overlay
+    #
+    if hasattr(
+        element,
+        "draw_overlay",
+    ):
+        element.draw_overlay(
+            view,
+            ax,
+        )
 
     return ax
 
@@ -440,3 +451,19 @@ def plot_system_3views(
     axes[2].set_title("YZ")
 
     plt.tight_layout()
+
+def plot_overlay(
+    element,
+    view="xz",
+    ax=None,
+):
+
+    if hasattr(
+        element,
+        "draw_overlay",
+    ):
+
+        element.draw_overlay(
+            view,
+            ax,
+        )

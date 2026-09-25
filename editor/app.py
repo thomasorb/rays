@@ -88,6 +88,7 @@ from .utils import (
 from plotting.views import (
     plot_element,
     plot_ray,
+    plot_overlay,
 )
 
 from .picking import (
@@ -1105,6 +1106,17 @@ class OpticalEditorApp:
         self,
         spec: ComponentSpec,
     ) -> list[tuple[str, str, float]]:
+
+        if spec.component_type == "CornerCube":
+
+            return [
+                (
+                    "width",
+                    "Aperture [mm]",
+                    spec.width,
+                )
+            ]
+
         fields = [
             (
                 "width",
@@ -1976,6 +1988,21 @@ class OpticalEditorApp:
                 view=self.current_view,
                 ax=self.axes,
             )
+
+            #
+            # High-level overlays
+            #
+
+            for obj in self.system.display_objects.values():
+
+                plot_overlay(
+
+                    obj,
+
+                    view=self.current_view,
+
+                    ax=self.axes,
+                )
 
             projected_limits.extend(
                 _projected_points(
