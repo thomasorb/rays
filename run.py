@@ -1,4 +1,4 @@
-from plotting.editor import launch_optical_editor
+from editor.app import launch_optical_editor
 
 
 if __name__ == "__main__":

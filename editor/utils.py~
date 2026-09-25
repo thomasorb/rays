@@ -1,0 +1,355 @@
+
+def _rotation_from_degrees(
+    rotation_deg,
+) -> Rotation:
+    return Rotation.from_euler(
+        "xyz",
+        rotation_deg,
+        degrees=True,
+    )
+
+
+def _rotation_to_euler(
+    rotation: Rotation,
+) -> list[float]:
+    with warnings.catch_warnings():
+        warnings.simplefilter(
+            "ignore",
+            UserWarning,
+        )
+        return rotation.as_euler(
+            "xyz",
+            degrees=True,
+        ).tolist()
+
+
+def _normalized_vector(
+    values,
+) -> np.ndarray:
+    vector = np.asarray(
+        values,
+        dtype=float,
+    )
+    norm = np.linalg.norm(
+        vector
+    )
+
+    if norm == 0:
+        raise ValueError(
+            "Direction vector cannot be zero."
+        )
+
+    return vector / norm
+
+
+def _build_material(
+    name: str,
+    custom_n: float,
+):
+    if name == "Air":
+        return AIR
+    if name == "BK7":
+        return BK7()
+    if name == "FusedSilica":
+        return FusedSilica()
+    if name == "Custom":
+        return ConstantIndex(
+            custom_n,
+            name=f"n={custom_n:g}",
+        )
+
+    raise ValueError(
+        f"Unsupported material: {name}"
+    )
+
+
+def _material_refractive_index(
+    name: str,
+    custom_n: float,
+) -> float:
+    if name == "Custom":
+        return float(custom_n)
+
+    return float(
+        _build_material(
+            name,
+            custom_n,
+        ).n(632.8e-9)
+    )
+
+
+def _component_projection(
+    spec: ComponentSpec,
+    view: str,
+) -> dict:
+    rotation = _rotation_from_degrees(
+        spec.rotation_deg
+    )
+    position = np.asarray(
+        spec.position,
+        dtype=float,
+    )
+    i, j = VIEW_MAP[view]
+
+    if spec.component_type in THICK_COMPONENTS:
+        front_world, back_world = _thick_component_faces(
+            position,
+            rotation,
+            spec.width,
+            spec.height,
+            spec.thickness,
+        )
+        center = (
+            position
+            + rotation.apply(
+                np.array(
+                    [0.0, 0.0, spec.thickness / 2]
+                )
+            )
+        )
+
+        front_xy = front_world[:, [i, j]]
+        back_xy = back_world[:, [i, j]]
+        edges = []
+
+        for front_point, back_point in zip(
+            front_world[:-1],
+            back_world[:-1],
+        ):
+            edges.append(
+                np.array([
+                    front_point[[i, j]],
+                    back_point[[i, j]],
+                ])
+            )
+
+        points = list(front_xy) + list(back_xy)
+
+        return {
+            "kind": "volume",
+            "faces": [front_xy, back_xy],
+            "edges": edges,
+            "center": center[[i, j]],
+            "points": points,
+        }
+
+    outline = _local_rectangle(
+        spec.width,
+        spec.height,
+        z=0.0,
+    )
+    world_outline = np.array([
+        rotation.apply(point) + position
+        for point in outline
+    ])
+    outline_xy = world_outline[:, [i, j]]
+
+    return {
+        "kind": "outline",
+        "outline": outline_xy,
+        "center": position[[i, j]],
+        "points": list(outline_xy),
+    }
+
+
+def _local_rectangle(
+    width: float,
+    height: float,
+    z: float,
+) -> np.ndarray:
+    half_width = width / 2
+    half_height = height / 2
+
+    return np.array([
+        [-half_width, -half_height, z],
+        [half_width, -half_height, z],
+        [half_width, half_height, z],
+        [-half_width, half_height, z],
+        [-half_width, -half_height, z],
+    ])
+
+
+def _projection_distance(
+    projected: dict,
+    x: float,
+    y: float,
+) -> float:
+    point = np.array([x, y])
+
+    if projected["kind"] == "volume":
+        for face in projected["faces"]:
+            if MplPath(face).contains_point(
+                point
+            ):
+                return 0.0
+
+        distances = []
+        for face in projected["faces"]:
+            distances.extend(
+                _polyline_distances(
+                    face,
+                    point,
+                )
+            )
+        for edge in projected["edges"]:
+            distances.extend(
+                _polyline_distances(
+                    edge,
+                    point,
+                )
+            )
+        return min(distances)
+
+    outline = projected["outline"]
+    if MplPath(outline).contains_point(
+        point
+    ):
+        return 0.0
+
+    return min(
+        _polyline_distances(
+            outline,
+            point,
+        )
+    )
+
+
+def _polyline_distances(
+    polyline: np.ndarray,
+    point: np.ndarray,
+) -> list[float]:
+    distances = []
+
+    for start, end in zip(
+        polyline[:-1],
+        polyline[1:],
+    ):
+        distances.append(
+            _point_segment_distance(
+                point,
+                start,
+                end,
+            )
+        )
+
+    return distances
+
+
+def _point_segment_distance(
+    point: np.ndarray,
+    start: np.ndarray,
+    end: np.ndarray,
+) -> float:
+    segment = end - start
+    length_sq = float(
+        np.dot(segment, segment)
+    )
+
+    if length_sq == 0:
+        return float(
+            np.linalg.norm(
+                point - start
+            )
+        )
+
+    t = np.dot(
+        point - start,
+        segment,
+    ) / length_sq
+    t = np.clip(t, 0.0, 1.0)
+    projection = start + t * segment
+    return float(
+        np.linalg.norm(
+            point - projection
+        )
+    )
+
+
+def _project_point(
+    point,
+    view: str,
+) -> np.ndarray:
+    i, j = VIEW_MAP[view]
+    array = np.asarray(
+        point,
+        dtype=float,
+    )
+    return array[[i, j]]
+
+
+def _project_vector(
+    vector,
+    view: str,
+) -> np.ndarray:
+    return _project_point(
+        vector,
+        view,
+    )
+
+
+def _screen_rotation_axis(
+    view: str,
+) -> int:
+    axes = set(
+        VIEW_MAP[view]
+    )
+    for axis in range(3):
+        if axis not in axes:
+            return axis
+    raise ValueError(
+        f"Invalid view: {view}"
+    )
+
+
+def _snap_drag_coordinate(
+    value: float,
+) -> float:
+    return float(
+        np.round(value)
+    )
+
+
+def _thick_component_faces(
+    front_position: np.ndarray,
+    rotation: Rotation,
+    width: float,
+    height: float,
+    thickness: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    front = _local_rectangle(
+        width,
+        height,
+        z=0.0,
+    )
+    back = _local_rectangle(
+        width,
+        height,
+        z=thickness,
+    )
+
+    front_world = np.array([
+        rotation.apply(point) + front_position
+        for point in front
+    ])
+    back_world = np.array([
+        rotation.apply(point) + front_position
+        for point in back
+    ])
+
+    return front_world, back_world
+
+
+def launch_optical_editor(
+    model: OpticalArchitectureModel | None = None,
+):
+    if TK_IMPORT_ERROR is not None:
+        raise RuntimeError(
+            "tkinter is required to launch the optical editor."
+        ) from TK_IMPORT_ERROR
+
+    root = tk.Tk()
+    OpticalEditorApp(
+        root=root,
+        model=model,
+    )
+    root.mainloop()

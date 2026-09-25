@@ -1,0 +1,50 @@
+from dataclasses import asdict, dataclass, field
+import numpy as np
+
+@dataclass
+class SourceSpec:
+    kind: str = "bundle"
+    position: list[float] = field(
+        default_factory=lambda: [-50.0, 0.0, 0.0]
+    )
+    direction: list[float] = field(
+        default_factory=lambda: [1.0, 0.0, 0.0]
+    )
+    wavelength: float = 632.8e-9
+    radius: float = 2.0
+    n_rays: int = 31
+
+
+@dataclass
+class ComponentSpec:
+    component_type: str
+    name: str
+    position: list[float]
+    rotation_deg: list[float]
+    width: float = 25.0
+    height: float = 25.0
+    thickness: float = 5.0
+    material: str = "BK7"
+    material_n: float = 1.5
+    material1: str = "Air"
+    material1_n: float = 1.0
+    material2: str = "Air"
+    material2_n: float = 1.5
+    R: float = 0.0
+    T: float = 1.0
+    back_R: float = 0.0
+    back_T: float = 1.0
+    phase_reflection: float = float(np.pi / 2)
+
+    def to_dict(
+        self,
+    ) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+    ) -> "ComponentSpec":
+        return cls(**data)
+
