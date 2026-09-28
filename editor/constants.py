@@ -6,12 +6,14 @@ THICK_COMPONENTS = {
 
 COMPONENT_TYPES = [
     "Mirror",
+    "CornerCube",
     "Detector",
     "OpticalInterface",
+    "CircularBeamSplitter",
     "Window",
     "Compensator",
     "PlateBeamSplitter",
-    "CornerCube",
+    "CircularPlateBeamSplitter",
 ]
 
 MATERIAL_NAMES = [
@@ -35,5 +37,8 @@ COMPONENT_COLORS = {
     "Window": "purple",
     "Compensator": "darkorange",
     "PlateBeamSplitter": "crimson",
-    "CornerCube": "#00BCD4"}
+    "CornerCube": "#00BCD4",
+    "CircularBeamSplitter": "magenta",
+    "CircularPlateBeamSplitter": "crimson",
+}
 

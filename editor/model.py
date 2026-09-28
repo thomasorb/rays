@@ -10,6 +10,8 @@ from optics.bundle_source import CircularBundleSource
 from optics.compensator import Compensator
 from optics.optical_interface import OpticalInterface
 from optics.plate_beamsplitter import PlateBeamSplitter
+from optics.circular_beamsplitter import CircularBeamSplitter
+from optics.circular_plate_beamsplitter import CircularPlateBeamSplitter
 from optics.corner_cube import CornerCube
 
 from architectures.classic_michelson import ClassicMichelson
@@ -244,6 +246,8 @@ class OpticalArchitectureModel:
             "Compensator": "COMP",
             "PlateBeamSplitter": "BS",
             "CornerCube": "CC",
+            "CircularBeamSplitter": "CBS",
+            "CircularPlateBeamSplitter": "CPBS",
         }
 
         prefix = prefix_map[component_type]
@@ -289,6 +293,17 @@ class OpticalArchitectureModel:
         elif component_type == "CornerCube":
             spec.width = 10.0
             spec.height = 10.0
+        elif component_type == "CircularBeamSplitter":
+            spec.width = 25.0
+            spec.R = 0.5
+            spec.T = 0.5
+        elif component_type == "CircularPlateBeamSplitter":
+            spec.width = 25.0
+            spec.thickness = 6.0
+            spec.material1 = "BK7"
+            spec.material1_n = 1.5168
+            spec.R = 0.5
+            spec.T = 0.5
     
         self.components.append(spec)
         return spec
@@ -507,6 +522,57 @@ class OpticalArchitectureModel:
 
             return cube
         
+        if spec.component_type == "CircularBeamSplitter":
+
+            beamsplitter = CircularBeamSplitter(
+
+                name=spec.name,
+
+                position=spec.position,
+
+                rotation=rotation,
+
+                diameter=spec.width,
+
+                R=spec.R,
+                T=spec.T,
+            )
+
+            system.add_element(
+                beamsplitter
+            )
+
+            return beamsplitter
+
+        if spec.component_type == "CircularPlateBeamSplitter":
+
+            beamsplitter = CircularPlateBeamSplitter(
+
+                name=spec.name,
+
+                position=spec.position,
+
+                rotation=rotation,
+
+                thickness=spec.thickness,
+
+                diameter=spec.width,
+
+                material=_build_material(
+                    spec.material1,
+                    spec.material1_n,
+                ),
+
+                R=spec.R,
+                T=spec.T,
+            )
+
+            beamsplitter.add_to_system(
+                system
+            )
+
+            return beamsplitter
+
         raise ValueError(
             f"Unsupported component type: "
             f"{spec.component_type}"

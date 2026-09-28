@@ -187,7 +187,7 @@ class OpticalEditorApp:
         ):
             command = {
                 "Move": self._show_move_panel,
-                "Trace": self._show_trace_panel,
+                "Trace": self._trace_rays,
                 "XY": lambda: self._set_view("xy"),
                 "XZ": lambda: self._set_view("xz"),
                 "YZ": lambda: self._set_view("yz"),
@@ -1117,6 +1117,56 @@ class OpticalEditorApp:
                 )
             ]
 
+        if spec.component_type == "CircularBeamSplitter":
+            return [
+
+                (
+                    "width",
+                    "Diameter [mm]",
+                    spec.width,
+                ),
+
+                (
+                    "R",
+                    "Reflectance",
+                    spec.R,
+                ),
+
+                (
+                    "T",
+                    "Transmittance",
+                    spec.T,
+                ),
+            ]
+
+        if spec.component_type == "CircularPlateBeamSplitter":
+            return [
+
+                (
+                    "width",
+                    "Diameter [mm]",
+                    spec.width,
+                ),
+
+                (
+                    "thickness",
+                    "Thickness [mm]",
+                    spec.thickness,
+                ),
+
+                (
+                    "R",
+                    "Reflectance",
+                    spec.R,
+                ),
+
+                (
+                    "T",
+                    "Transmittance",
+                    spec.T,
+                ),
+            ]
+
         fields = [
             (
                 "width",
@@ -1177,7 +1227,7 @@ class OpticalEditorApp:
                 )
             ]
 
-        if spec.component_type == "OpticalInterface":
+        if spec.component_type in ("OpticalInterface", "CircularBeamSplitter"):
             return [
                 (
                     "material1",
@@ -1514,6 +1564,9 @@ class OpticalEditorApp:
     def _trace_rays(
         self,
     ):
+        if not self.panel_mode == "trace":
+            self._show_trace_panel()
+            
         if not self._apply_trace_settings():
             return
 

@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+from .optical_interface import (
+    OpticalInterface
+)
+
+from .circular_planar import (
+    CircularPlanarElement
+)
+
+
+class CircularOpticalInterface(
+    OpticalInterface,
+    CircularPlanarElement,
+):
+    """
+    Circular optical interface.
+
+    Same physics as OpticalInterface,
+    but circular aperture geometry.
+    """
+
+    pass
