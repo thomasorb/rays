@@ -104,3 +104,65 @@ def set_setting(
         settings
     )
 
+# ==========================================================
+# File dialogs
+# ==========================================================
+
+def get_last_directory():
+
+    directory = get_setting(
+        "last_directory",
+        None,
+    )
+
+    if directory:
+
+        path = Path(directory)
+
+        if path.exists():
+
+            return str(path)
+
+    return str(
+        Path.home()
+    )
+
+
+def set_last_directory(
+    path,
+):
+
+    path = Path(path)
+
+    set_setting(
+        "last_directory",
+        str(path),
+    )
+
+
+def get_dialog_directory(
+    current_file=None,
+):
+    """
+    Preferred directory for open/save dialogs.
+
+    Priority:
+
+        1. current file directory
+        2. last directory used
+        3. home directory
+    """
+
+    if current_file:
+
+        current_path = Path(
+            current_file
+        )
+
+        if current_path.exists():
+
+            return str(
+                current_path.parent
+            )
+
+    return get_last_directory()

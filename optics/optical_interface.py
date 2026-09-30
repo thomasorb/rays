@@ -4,6 +4,7 @@ import numpy as np
 
 from .planar import PlanarElement
 
+import config
 
 class OpticalInterface(
     PlanarElement
@@ -20,7 +21,7 @@ class OpticalInterface(
 
         phase_reflection=np.pi / 2,
 
-        max_generation_depth=10,
+        max_generation_depth=config.MAX_RAY_GENERATION_DEPTH,
 
         *args,
         **kwargs,

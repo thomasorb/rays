@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
+import config
+
 from .circular_planar import (
     CircularPlanarElement
 )
@@ -23,12 +25,12 @@ class CircularOpticalInterface(
         material1,
         material2,
 
-        R=0.0,
-        T=1.0,
+        R=config.DEFAULT_R,
+        T=config.DEFAULT_T,
 
         phase_reflection=np.pi / 2,
 
-        max_generation_depth=10,
+        max_generation_depth=config.MAX_RAY_GENERATION_DEPTH,
 
         *args,
         **kwargs,

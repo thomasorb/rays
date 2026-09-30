@@ -67,8 +67,9 @@ from .specs import (
 from .settings import (
     set_setting,
     get_setting,
+    get_dialog_directory,
+    set_last_directory,
 )
-
 from .model import (
     OpticalArchitectureModel
 )
@@ -1890,12 +1891,19 @@ class OpticalEditorApp:
         self,
     ):
         path = filedialog.asksaveasfilename(
+            initialdir=
+            get_dialog_directory(
+                self.current_file
+            ),
+
             title="Save architecture",
+
             defaultextension=".json",
+
             filetypes=[
                 ("JSON files", "*.json"),
             ],
-        )
+        )  
 
         if not path:
             return
@@ -1909,6 +1917,10 @@ class OpticalEditorApp:
 
         self.current_file = path
 
+        set_last_directory(
+            Path(path).parent
+        )
+        
         set_setting(
             "last_architecture",
             path,
@@ -1938,12 +1950,19 @@ class OpticalEditorApp:
         self,
     ):
         path = filedialog.askopenfilename(
+
+            initialdir=
+            get_dialog_directory(
+                self.current_file
+            ),
+
             title="Load architecture",
+
             filetypes=[
                 ("JSON files", "*.json"),
             ],
         )
-
+        
         if not path:
             return
 
@@ -1959,6 +1978,11 @@ class OpticalEditorApp:
                 "last_architecture",
                 path,
             )
+
+            set_last_directory(
+                Path(path).parent
+            )
+            
             self.selected_index = None
             self.move_component_var.set("")
             self.move_detector_1_var.set("")

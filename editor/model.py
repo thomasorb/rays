@@ -300,8 +300,8 @@ class OpticalArchitectureModel:
         elif component_type == "CircularPlateBeamSplitter":
             spec.width = 25.0
             spec.thickness = 6.0
-            spec.material1 = "BK7"
-            spec.material1_n = 1.5168
+            spec.material = "BK7"
+            spec.material_n = 1.5168
             spec.R = 0.5
             spec.T = 0.5
     
@@ -559,8 +559,8 @@ class OpticalArchitectureModel:
                 diameter=spec.width,
 
                 material=_build_material(
-                    spec.material1,
-                    spec.material1_n,
+                    spec.material,
+                    spec.material_n,
                 ),
 
                 R=spec.R,

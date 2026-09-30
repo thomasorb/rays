@@ -2,6 +2,7 @@ THICK_COMPONENTS = {
     "Window",
     "Compensator",
     "PlateBeamSplitter",
+    "CircularPlateBeamSplitter",
 }
 
 COMPONENT_TYPES = [
@@ -13,7 +14,6 @@ COMPONENT_TYPES = [
     "Window",
     "Compensator",
     "PlateBeamSplitter",
-    "CircularPlateBeamSplitter",
 ]
 
 MATERIAL_NAMES = [

@@ -10,6 +10,8 @@ from .optical_interface import (
     OpticalInterface
 )
 
+import config
+
 from materials.air import AIR
 
 class PlateBeamSplitter:
@@ -35,11 +37,11 @@ class PlateBeamSplitter:
 
         material,
 
-        R=0.5,
-        T=0.5,
+        R=config.DEFAULT_BEAMSPLITTER_R,
+        T=config.DEFAULT_BEAMSPLITTER_T,
 
-        back_R=0.0,
-        back_T=1.0,
+        back_R=config.DEFAULT_R,
+        back_T=config.DEFAULT_T,
     ):
 
         self.name = name

@@ -4,6 +4,7 @@ import numpy as np
 
 from .planar import PlanarElement
 
+import config
 
 class BeamSplitter(
     PlanarElement
@@ -21,9 +22,9 @@ class BeamSplitter(
 
     def __init__(
         self,
-        R=0.5,
-        T=0.5,
-        max_generation_depth=2,
+        R=config.DEFAULT_BEAMSPLITTER_R,
+        T=config.DEFAULT_BEAMSPLITTER_T,
+        max_generation_depth=config.MAX_BS_RAY_GENERATION_DEPTH,
         *args,
         **kwargs,
     ):
