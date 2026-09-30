@@ -1,0 +1,31 @@
+{
+  "type": "CornerCube",
+
+  "module": "corner_cube",
+
+  "class": "CornerCube",
+
+  "prefix": "CC",
+
+  "color": "#00BCD4",
+
+  "add_mode": "assembly",
+
+  "rotation_mode": "optical_axis",
+
+  "constructor_map": {
+    "width": "aperture"
+  },
+
+  "defaults": {
+    "width": 10.0
+  },
+
+  "fields": [
+    {
+      "name": "width",
+      "label": "Aperture [mm]",
+      "type": "float"
+    }
+  ]
+}

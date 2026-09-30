@@ -1,20 +1,13 @@
-THICK_COMPONENTS = {
-    "Window",
-    "Compensator",
-    "PlateBeamSplitter",
-    "CircularPlateBeamSplitter",
-}
+from __future__ import annotations
 
-COMPONENT_TYPES = [
-    "Mirror",
-    "CornerCube",
-    "Detector",
-    "OpticalInterface",
-    "CircularBeamSplitter",
-    "Window",
-    "Compensator",
-    "PlateBeamSplitter",
-]
+from .registry import (
+    REGISTRY,
+    component_types,
+)
+
+# ==========================================================
+# Materials
+# ==========================================================
 
 MATERIAL_NAMES = [
     "Air",
@@ -23,22 +16,45 @@ MATERIAL_NAMES = [
     "Custom",
 ]
 
-AXIS_NAMES = ["x", "y", "z"]
+# ==========================================================
+# Axes
+# ==========================================================
+
+AXIS_NAMES = [
+    "x",
+    "y",
+    "z",
+]
+
 AXIS_INDEX = {
     "x": 0,
     "y": 1,
     "z": 2,
 }
 
+# ==========================================================
+# Components
+# ==========================================================
+
+COMPONENT_TYPES = (
+    component_types()
+)
+
 COMPONENT_COLORS = {
-    "Mirror": "royalblue",
-    "Detector": "forestgreen",
-    "OpticalInterface": "dimgray",
-    "Window": "purple",
-    "Compensator": "darkorange",
-    "PlateBeamSplitter": "crimson",
-    "CornerCube": "#00BCD4",
-    "CircularBeamSplitter": "magenta",
-    "CircularPlateBeamSplitter": "crimson",
+
+    name: definition.color
+
+    for name, definition
+    in REGISTRY.items()
 }
 
+THICK_COMPONENTS = {
+
+    name
+
+    for name, definition
+    in REGISTRY.items()
+
+    if "thickness"
+    in definition.defaults
+}

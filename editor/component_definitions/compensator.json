@@ -1,0 +1,48 @@
+{
+  "type": "Compensator",
+
+  "module": "compensator",
+
+  "class": "Compensator",
+
+  "prefix": "COMP",
+
+  "color": "darkorange",
+
+  "add_mode": "assembly",
+
+  "constructor_map": {
+    "width": "width",
+    "height": "height",
+    "thickness": "thickness",
+    "material": "material"
+  },
+
+  "defaults": {
+    "width": 25.0,
+    "height": 25.0,
+    "thickness": 5.0,
+    "material": "BK7",
+    "material_n": 1.5
+  },
+
+  "fields": [
+    {
+      "name": "width",
+      "label": "Width [mm]"
+    },
+    {
+      "name": "height",
+      "label": "Height [mm]"
+    },
+    {
+      "name": "thickness",
+      "label": "Thickness [mm]"
+    },
+    {
+      "name": "material",
+      "label": "Material",
+      "type": "material"
+    }
+  ]
+}

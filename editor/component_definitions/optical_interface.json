@@ -1,0 +1,61 @@
+{
+  "type": "OpticalInterface",
+
+  "module": "optical_interface",
+
+  "class": "OpticalInterface",
+
+  "prefix": "IF",
+
+  "color": "dimgray",
+
+  "add_mode": "element",
+
+  "constructor_map": {
+    "width": "width",
+    "height": "height",
+    "material1": "material1",
+    "material2": "material2",
+    "R": "R",
+    "T": "T"
+  },
+
+  "defaults": {
+    "width": 25.0,
+    "height": 25.0,
+    "material1": "Air",
+    "material2": "BK7",
+    "material2_n": 1.5,
+    "R": 0.5,
+    "T": 0.5
+  },
+
+  "fields": [
+    {
+      "name": "width",
+      "label": "Width [mm]"
+    },
+    {
+      "name": "height",
+      "label": "Height [mm]"
+    },
+    {
+      "name": "material1",
+      "label": "Material 1",
+      "type": "material"
+    },
+    {
+      "name": "material2",
+      "label": "Material 2",
+      "type": "material"
+    },
+    {
+      "name": "R",
+      "label": "Reflectance"
+    },
+    {
+      "name": "T",
+      "label": "Transmittance"
+    }
+  ]
+}

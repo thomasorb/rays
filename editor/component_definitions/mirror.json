@@ -1,0 +1,38 @@
+{
+  "type": "Mirror",
+
+  "module": "mirror",
+
+  "class": "Mirror",
+
+  "prefix": "M",
+
+  "color": "royalblue",
+
+  "add_mode": "element",
+
+  "constructor_map": {
+
+    "width": "width",
+
+    "height": "height"
+  },
+
+  "defaults": {
+
+    "width": 25.0,
+
+    "height": 25.0
+  },
+
+  "fields": [
+    {
+      "name": "width",
+      "label": "Width [mm]"
+    },
+    {
+      "name": "height",
+      "label": "Height [mm]"
+    }
+  ]
+}

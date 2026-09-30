@@ -1,0 +1,26 @@
+{
+  "type": "CornerCube",
+
+  "module": "corner_cube",
+
+  "class": "CornerCube",
+
+  "prefix": "CC",
+
+  "color": "#00BCD4",
+
+  "defaults": {
+
+    "width": 10.0
+  },
+
+  "fields": [
+
+    {
+      "name": "width",
+      "label": "Aperture [mm]",
+      "type": "float",
+      "default": 10.0
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "type": "Mirror",
+
+  "module": "mirror",
+
+  "class": "Mirror",
+
+  "prefix": "M",
+
+  "color": "royalblue",
+
+  "defaults": {
+
+    "width": 25.0,
+
+    "height": 25.0
+  },
+
+  "fields": [
+
+    {
+      "name": "width",
+      "label": "Width [mm]",
+      "type": "float",
+      "default": 25.0
+    },
+
+    {
+      "name": "height",
+      "label": "Height [mm]",
+      "type": "float",
+      "default": 25.0
+    }
+  ]
+}

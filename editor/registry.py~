@@ -1,0 +1,146 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+import json
+
+
+# ==========================================================
+# Data model
+# ==========================================================
+
+@dataclass
+class ComponentField:
+
+    name: str
+
+    label: str
+
+    type: str = "float"
+
+    default = None
+
+
+@dataclass
+class ComponentDefinition:
+
+    type: str
+
+    module: str
+
+    class_name: str
+
+    prefix: str
+
+    color: str
+
+    defaults: dict
+
+    fields: list[ComponentField]
+
+
+# ==========================================================
+# Registry location
+# ==========================================================
+
+COMPONENT_DEFINITIONS_DIR = (
+    Path(__file__).parent
+    / "component_definitions"
+)
+
+
+# ==========================================================
+# JSON loading
+# ==========================================================
+
+def load_component_definition(
+    path: Path,
+) -> ComponentDefinition:
+
+    data = json.loads(
+        path.read_text()
+    )
+
+    fields = [
+
+        ComponentField(**field)
+
+        for field in data.get(
+            "fields",
+            []
+        )
+    ]
+
+    return ComponentDefinition(
+
+        type=data["type"],
+
+        module=data["module"],
+
+        class_name=data["class"],
+
+        prefix=data["prefix"],
+
+        color=data["color"],
+
+        defaults=data.get(
+            "defaults",
+            {},
+        ),
+
+        fields=fields,
+    )
+
+
+# ==========================================================
+# Registry
+# ==========================================================
+
+def load_registry():
+
+    registry = {}
+
+    for file in sorted(
+        COMPONENT_DEFINITIONS_DIR.glob(
+            "*.json"
+        )
+    ):
+
+        definition = (
+            load_component_definition(
+                file
+            )
+        )
+
+        registry[
+            definition.type
+        ] = definition
+
+    return registry
+
+
+# ==========================================================
+# Global registry
+# ==========================================================
+
+REGISTRY = load_registry()
+
+
+# ==========================================================
+# Convenience
+# ==========================================================
+
+def component_types():
+
+    return sorted(
+        REGISTRY.keys()
+    )
+
+
+def component_definition(
+    component_type,
+):
+
+    return REGISTRY[
+        component_type
+    ]

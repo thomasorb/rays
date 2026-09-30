@@ -1,0 +1,20 @@
+{
+  "type": "Detector",
+
+  "module": "detector",
+
+  "class": "Detector",
+
+  "prefix": "DET",
+
+  "color": "forestgreen",
+
+  "add_mode": "detector",
+
+  "constructor_map": {
+
+    "width": "width",
+
+    "height": "height"
+  }
+}

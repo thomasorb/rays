@@ -1,0 +1,53 @@
+{
+  "type": "CircularPlateBeamSplitter",
+
+  "module": "circular_plate_beamsplitter",
+
+  "class": "CircularPlateBeamSplitter",
+
+  "prefix": "CPBS",
+
+  "color": "crimson",
+
+  "defaults": {
+
+    "width": 25.0,
+
+    "thickness": 6.0,
+
+    "material": "BK7",
+
+    "R": 0.5,
+
+    "T": 0.5
+  },
+
+  "fields": [
+
+    {
+      "name": "width",
+      "label": "Diameter [mm]"
+    },
+
+    {
+      "name": "thickness",
+      "label": "Thickness [mm]"
+    },
+
+    {
+      "name": "material",
+      "label": "Material",
+      "type": "material"
+    },
+
+    {
+      "name": "R",
+      "label": "Reflectance"
+    },
+
+    {
+      "name": "T",
+      "label": "Transmittance"
+    }
+  ]
+}

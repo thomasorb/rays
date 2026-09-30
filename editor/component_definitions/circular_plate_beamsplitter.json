@@ -1,0 +1,26 @@
+{
+  "type": "CircularPlateBeamSplitter",
+
+  "module": "circular_plate_beamsplitter",
+
+  "class": "CircularPlateBeamSplitter",
+
+  "prefix": "CPBS",
+
+  "color": "crimson",
+
+  "add_mode": "assembly",
+
+  "constructor_map": {
+
+    "width": "diameter",
+
+    "thickness": "thickness",
+
+    "material": "material",
+
+    "R": "R",
+
+    "T": "T"
+  }
+}

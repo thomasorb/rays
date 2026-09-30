@@ -1,0 +1,60 @@
+{
+  "type": "PlateBeamSplitter",
+
+  "module": "plate_beamsplitter",
+
+  "class": "PlateBeamSplitter",
+
+  "prefix": "BS",
+
+  "color": "crimson",
+
+  "add_mode": "assembly",
+
+  "constructor_map": {
+    "width": "width",
+    "height": "height",
+    "thickness": "thickness",
+    "material": "material",
+    "R": "R",
+    "T": "T"
+  },
+
+  "defaults": {
+    "width": 25.0,
+    "height": 25.0,
+    "thickness": 5.0,
+    "material": "BK7",
+    "material_n": 1.5,
+    "R": 0.5,
+    "T": 0.5
+  },
+
+  "fields": [
+    {
+      "name": "width",
+      "label": "Width [mm]"
+    },
+    {
+      "name": "height",
+      "label": "Height [mm]"
+    },
+    {
+      "name": "thickness",
+      "label": "Thickness [mm]"
+    },
+    {
+      "name": "material",
+      "label": "Material",
+      "type": "material"
+    },
+    {
+      "name": "R",
+      "label": "Reflectance"
+    },
+    {
+      "name": "T",
+      "label": "Transmittance"
+    }
+  ]
+}
