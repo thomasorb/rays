@@ -23,7 +23,10 @@
 
     "T": "T",
 
-    "wedge_angle_deg": "wedge_angle_deg"
+    "wedge_angle_deg": "wedge_angle_deg",
+
+      "back_R": "back_R",
+      "back_T": "back_T"
   },
 
   "defaults": {
@@ -40,7 +43,10 @@
 
     "T": 0.5,
 
-    "wedge_angle_deg": 0.0
+      "wedge_angle_deg": 0.0,
+
+      "back_R": 0,
+      "back_T": 1
   },
 
   "fields": [
@@ -75,6 +81,15 @@
     {
       "name": "T",
       "label": "Transmittance"
+    },
+      {
+      "name": "back_R",
+      "label": "back Reflectance"
+    },
+
+    {
+      "name": "back_T",
+      "label": "back Transmittance"
     }
   ]
 }

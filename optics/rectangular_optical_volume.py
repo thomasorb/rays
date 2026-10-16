@@ -1,0 +1,40 @@
+from __future__ import annotations
+
+import numpy as np
+
+from .optical_volume import (
+    OpticalVolume
+)
+
+
+class RectangularOpticalVolume(
+    OpticalVolume
+):
+
+    def contains_world_point(
+        self,
+        point,
+    ):
+
+        if not self.contains_between_surfaces(
+            point
+        ):
+            return False
+
+        local = (
+            self.front.transform
+            .world_to_local_point(
+                point
+            )
+        )
+
+        return (
+
+            abs(local[0])
+            <= self.width / 2
+
+            and
+
+            abs(local[1])
+            <= self.height / 2
+        )

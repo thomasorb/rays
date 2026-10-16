@@ -6,7 +6,7 @@ Global configuration for rays.
 # Ray tracing
 # ==========================================================
 
-MAX_RAY_GENERATION_DEPTH = 100
+MAX_RAY_GENERATION_DEPTH = 1000
 MAX_BS_RAY_GENERATION_DEPTH = 10
 
 #MIN_COMPLEX_AMPLITUDE = 1e-6
@@ -47,3 +47,4 @@ DEFAULT_T = 1.0
 DEFAULT_BEAMSPLITTER_R = 0.5
 DEFAULT_BEAMSPLITTER_T = 0.5
 
+GEOMETRY_EPSILON = 1e-6

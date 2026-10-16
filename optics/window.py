@@ -12,7 +12,13 @@ from .optical_interface import (
 
 from materials.air import AIR
 
-class Window:
+from .rectangular_optical_volume import (
+    RectangularOpticalVolume,
+)
+
+class Window(
+    RectangularOpticalVolume
+):
     """
     Plane-parallel plate.
 
@@ -113,6 +119,9 @@ class Window:
             R=back_R,
             T=back_T,
         )
+
+        self.register_interfaces()
+
 
     # ---------------------------------
 

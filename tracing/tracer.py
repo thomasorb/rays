@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
+import logger
 
 class Tracer:
     """
@@ -61,7 +62,7 @@ class Tracer:
     def trace(
         self,
         initial_ray,
-        max_interactions=100,
+        max_interactions=1000,
     ):
 
         active_rays = [
@@ -77,6 +78,7 @@ class Tracer:
             ray = active_rays.pop()
 
             if interactions > max_interactions:
+                logger.log(f'Max interactions ({max_interactions}) reached, terminating ray tracing.')
                 break
 
             interactions += 1
@@ -87,6 +89,79 @@ class Tracer:
                 )
             )
 
+
+            #
+            # Volume escape test
+            #
+            # We must test the NEXT intersection
+            # point, not the current ray origin.
+            #
+
+            if ray.current_volume is not None:
+
+                if element is None:
+
+                    ray.is_alive = False
+
+                    ray.termination_reason = (
+                        "Escaped optical volume"
+                    )
+
+                    finished_rays.append(
+                        ray
+                    )
+
+                    continue
+
+                next_point = (
+                    ray.origin
+                    +
+                    distance
+                    * ray.direction
+                )
+
+                logger.log(
+                    "CHECKING",
+                    ray.branch_id,
+                    next_point,
+                    ray.current_volume.name,
+                )
+
+                logger.log(
+                    "LOCAL",
+                    ray.current_volume.front
+                    .transform
+                    .world_to_local_point(
+                        next_point
+                    )
+                )
+
+                inside = (
+                    ray.current_volume
+                    .contains_world_point(
+                        next_point
+                    )
+                )
+
+                logger.log(
+                    "NEXT INSIDE:",
+                    inside
+                )
+
+                if not inside:
+
+                    ray.is_alive = False
+
+                    ray.termination_reason = (
+                        "Escaped optical volume"
+                    )
+
+                    finished_rays.append(
+                        ray
+                    )
+
+                    continue
+            
             if element is None:
 
                 finished_rays.append(
@@ -95,11 +170,33 @@ class Tracer:
 
                 continue
 
+            logger.log(
+                element.name,
+                type(element).__name__,
+                ray.current_material.name,
+                ray.branch_id,
+            )
+
             ray.propagate(distance)
 
+            logger.log(
+                "CALLING",
+                element.name,
+                type(element).__name__,
+                element.interact,
+            )
+            
             new_rays = element.interact(
                 ray
             )
+
+
+            logger.log(
+                "RETURNED",
+                element.name,
+                len(new_rays),
+            )
+
 
             for child in new_rays:
 

@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+LOGGER = None
+
+
+def set_logger(
+    callback,
+):
+    global LOGGER
+
+    LOGGER = callback
+
+
+def log(
+    *args,
+):
+    message = " ".join(
+        str(x)
+        for x in args
+    )
+
+    if LOGGER is not None:
+
+        LOGGER(message)
+
+    else:
+
+        print(message)

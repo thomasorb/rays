@@ -12,8 +12,13 @@ from .circular_optical_interface import (
 
 import config
 
+from .circular_optical_volume import (
+    CircularOpticalVolume,
+)
 
-class CircularPlateBeamSplitter:
+class CircularPlateBeamSplitter(
+    CircularOpticalVolume
+):
     """
     Circular thick beam splitter.
 
@@ -57,7 +62,8 @@ class CircularPlateBeamSplitter:
         T=config.DEFAULT_BEAMSPLITTER_T,
 
         back_R=config.DEFAULT_R,
-        back_T=config.DEFAULT_T,
+        back_T=config.DEFAULT_T,    
+            
     ):
 
         self.name = name
@@ -158,6 +164,8 @@ class CircularPlateBeamSplitter:
             T=back_T,
         )
 
+        self.register_interfaces()
+        
     # ==================================================
     # System
     # ==================================================

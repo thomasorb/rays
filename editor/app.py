@@ -108,6 +108,13 @@ class OpticalEditorApp:
         root: tk.Tk,
         model: OpticalArchitectureModel | None = None,
     ):
+
+        from logger import (
+            set_logger,
+        )
+
+        set_logger(self._log)
+        
         if TK_IMPORT_ERROR is not None:
             raise RuntimeError(
                 "tkinter is required to use the optical editor."
@@ -161,6 +168,12 @@ class OpticalEditorApp:
             preserve_limits=False
         )
         self.selected_name: str | None = None
+
+        from logger import log
+
+        log(
+            "EDITOR LOGGER CONNECTED"
+        )
 
     def _build_ui(
         self,
@@ -481,14 +494,23 @@ class OpticalEditorApp:
         self.debug_text.configure(
             state="normal"
         )
+
         self.debug_text.insert(
             "end",
             message.rstrip() + "\n",
         )
+
         self.debug_text.see("end")
+
         self.debug_text.configure(
             state="disabled"
         )
+
+        #
+        # Force UI refresh
+        #
+        self.debug_text.update_idletasks()
+
 
     def _build_menu(
         self,

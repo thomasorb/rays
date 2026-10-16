@@ -1,0 +1,38 @@
+from __future__ import annotations
+
+
+class OpticalVolume:
+    """
+    Base class for thick optics.
+
+    Owns two interfaces:
+
+        front
+        back
+
+    and provides automatic volume
+    tracking support.
+    """
+
+    @property
+    def interfaces(
+        self,
+    ):
+        return [
+            self.front,
+            self.back,
+        ]
+
+    # --------------------------------------------------
+
+    def register_interfaces(
+        self,
+    ):
+        """
+        Attach this volume to all
+        owned interfaces.
+        """
+
+        for interface in self.interfaces:
+
+            interface.parent_volume = self

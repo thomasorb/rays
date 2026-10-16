@@ -34,6 +34,19 @@ class OpticalElement:
     def normal(self):
         return self.transform.normal
 
+    @property
+    def position(
+        self,
+    ):
+        return self.transform.position
+
+    @position.setter
+    def position(
+        self,
+        value,
+    ):
+        self.transform.position = value
+
     # --------------------------------------------------
 
     def randomize_wavefront_error(

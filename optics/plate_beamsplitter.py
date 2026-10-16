@@ -12,8 +12,13 @@ from .optical_interface import (
 
 import config
 
+from .rectangular_optical_volume import (
+    RectangularOpticalVolume,
+)
 
-class PlateBeamSplitter:
+class PlateBeamSplitter(
+    RectangularOpticalVolume
+):
     """
     Thick plate beamsplitter.
 
@@ -47,6 +52,7 @@ class PlateBeamSplitter:
 
         back_R=config.DEFAULT_R,
         back_T=config.DEFAULT_T,
+        
     ):
 
         self.name = name
@@ -143,6 +149,8 @@ class PlateBeamSplitter:
             R=back_R,
             T=back_T,
         )
+
+        self.register_interfaces()
 
     # ==================================================
     # System

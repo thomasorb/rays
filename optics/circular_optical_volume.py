@@ -1,0 +1,45 @@
+from __future__ import annotations
+
+from .optical_volume import (
+    OpticalVolume
+)
+
+import logger
+
+class CircularOpticalVolume(
+    OpticalVolume
+):
+
+    def contains_world_point(
+        self,
+        point,
+    ):
+
+        if not self.contains_between_surfaces(
+            point
+        ):
+            return False
+
+        local = (
+            self.front.transform
+            .world_to_local_point(
+                point
+            )
+        )
+
+        r2 = (
+            local[0]**2
+            +
+            local[1]**2
+        )
+
+        logger.log(
+            "LOCAL",
+            local
+        )
+        
+        return (
+            r2
+            <=
+            (self.diameter / 2)**2
+        )

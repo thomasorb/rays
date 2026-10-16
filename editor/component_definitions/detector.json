@@ -16,5 +16,19 @@
     "width": "width",
 
     "height": "height"
-  }
+  },
+
+
+  "fields": [
+
+    {
+      "name": "width",
+      "label": "Width [mm]"
+    },
+
+	{
+	  "name": "height",
+	  "label": "Height [mm]"
+	}
+  ]
 }

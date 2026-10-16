@@ -59,6 +59,15 @@ class Ray:
         self.generation = 0
   
         self.current_material = AIR
+
+        #
+        # Volume currently containing the ray.
+        #
+        # None means free space.
+        #
+
+        self.current_volume = None
+
     # ==================================================
     # utilities
     # ==================================================
