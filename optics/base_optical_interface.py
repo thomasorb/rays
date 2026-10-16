@@ -109,6 +109,27 @@ class BaseOpticalInterface:
             ray.current_volume,
         )
 
+        #
+        # Kill negligible rays
+        #
+
+        if (
+            abs(ray.complex_amplitude)**2
+            <
+            config.MIN_RELATIVE_INTENSITY
+        ):
+
+            ray.is_alive = False
+
+            logger.log(
+                "LOW POWER TERMINATION",
+                ray.branch_id,
+                abs(ray.complex_amplitude)**2,
+            )
+
+            return []
+
+        
         if (
             ray.generation
             >= self.max_generation_depth
