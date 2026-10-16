@@ -1,0 +1,23 @@
+{
+  "type": "CircularBeamSplitter",
+  "module": "circular_beamsplitter",
+  "class": "CircularBeamSplitter",
+  "prefix": "CBS",
+  "color": "crimson",
+  "add_mode": "element",
+
+  "constructor_map": {
+    "width": "diameter"
+  },
+
+  "defaults": {
+    "width": 25.0
+  },
+
+  "fields": [
+    {
+      "name": "width",
+      "label": "Diameter [mm]"
+    }
+  ]
+}

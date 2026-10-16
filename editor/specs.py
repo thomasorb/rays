@@ -17,28 +17,53 @@ class SourceSpec:
 
 @dataclass
 class ComponentSpec:
+
     component_type: str
+
     name: str
+
     position: list[float]
+
     rotation_deg: list[float]
+
     width: float = 25.0
+
     height: float = 25.0
+
     thickness: float = 5.0
+
     material: str = "BK7"
+
     material_n: float = 1.5
+
     material1: str = "Air"
+
     material1_n: float = 1.0
+
     material2: str = "Air"
+
     material2_n: float = 1.5
+
     R: float = 0.0
+
     T: float = 1.0
+
     back_R: float = 0.0
+
     back_T: float = 1.0
+
     phase_reflection: float = float(np.pi / 2)
+
+    #
+    # New
+    #
+
+    wedge_angle_deg: float = 0.0
 
     def to_dict(
         self,
     ) -> dict:
+
         return asdict(self)
 
     @classmethod
@@ -46,5 +71,5 @@ class ComponentSpec:
         cls,
         data: dict,
     ) -> "ComponentSpec":
-        return cls(**data)
 
+        return cls(**data)

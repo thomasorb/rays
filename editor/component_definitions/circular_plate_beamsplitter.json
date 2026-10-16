@@ -21,6 +21,60 @@
 
     "R": "R",
 
-    "T": "T"
-  }
+    "T": "T",
+
+    "wedge_angle_deg": "wedge_angle_deg"
+  },
+
+  "defaults": {
+
+    "width": 25.0,
+
+    "thickness": 6.0,
+
+    "material": "BK7",
+
+    "material_n": 1.5168,
+
+    "R": 0.5,
+
+    "T": 0.5,
+
+    "wedge_angle_deg": 0.0
+  },
+
+  "fields": [
+
+    {
+      "name": "width",
+      "label": "Diameter [mm]"
+    },
+
+    {
+      "name": "thickness",
+      "label": "Thickness [mm]"
+    },
+
+    {
+      "name": "wedge_angle_deg",
+      "label": "Wedge [deg]",
+      "type": "float"
+    },
+
+    {
+      "name": "material",
+      "label": "Material",
+      "type": "material"
+    },
+
+    {
+      "name": "R",
+      "label": "Reflectance"
+    },
+
+    {
+      "name": "T",
+      "label": "Transmittance"
+    }
+  ]
 }

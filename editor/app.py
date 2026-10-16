@@ -17,6 +17,10 @@ from .theme import (
     configure_theme,
 )
 
+from .registry import (
+    component_definition,
+)
+
 try:
     import tkinter as tk
     from tkinter import (
@@ -1106,111 +1110,39 @@ class OpticalEditorApp:
     def _component_scalar_fields(
         self,
         spec: ComponentSpec,
-    ) -> list[tuple[str, str, float]]:
+    ):
+        """
+        Scalar fields driven entirely
+        by the component registry.
+        """
 
-        if spec.component_type == "CornerCube":
+        definition = component_definition(
+            spec.component_type
+        )
 
-            return [
-                (
-                    "width",
-                    "Aperture [mm]",
-                    spec.width,
-                )
-            ]
+        fields = []
 
-        if spec.component_type == "CircularBeamSplitter":
-            return [
+        for field in definition.fields:
 
-                (
-                    "width",
-                    "Diameter [mm]",
-                    spec.width,
-                ),
+            #
+            # Material fields are handled
+            # separately.
+            #
 
-                (
-                    "R",
-                    "Reflectance",
-                    spec.R,
-                ),
+            if field.type == "material":
+                continue
 
-                (
-                    "T",
-                    "Transmittance",
-                    spec.T,
-                ),
-            ]
+            value = getattr(
+                spec,
+                field.name,
+            )
 
-        if spec.component_type == "CircularPlateBeamSplitter":
-            return [
-
-                (
-                    "width",
-                    "Diameter [mm]",
-                    spec.width,
-                ),
-
-                (
-                    "thickness",
-                    "Thickness [mm]",
-                    spec.thickness,
-                ),
-
-                (
-                    "R",
-                    "Reflectance",
-                    spec.R,
-                ),
-
-                (
-                    "T",
-                    "Transmittance",
-                    spec.T,
-                ),
-            ]
-
-        fields = [
-            (
-                "width",
-                "Width [mm]",
-                spec.width,
-            ),
-            (
-                "height",
-                "Height [mm]",
-                spec.height,
-            ),
-        ]
-
-        if spec.component_type in THICK_COMPONENTS:
             fields.append(
                 (
-                    "thickness",
-                    "Thickness [mm]",
-                    spec.thickness,
+                    field.name,
+                    field.label,
+                    value,
                 )
-            )
-
-        if spec.component_type == "OpticalInterface":
-            fields.extend(
-                [
-                    ("R", "Reflectance", spec.R),
-                    ("T", "Transmittance", spec.T),
-                    (
-                        "phase_reflection",
-                        "Reflection phase [rad]",
-                        spec.phase_reflection,
-                    ),
-                ]
-            )
-
-        if spec.component_type == "PlateBeamSplitter":
-            fields.extend(
-                [
-                    ("R", "Front reflectance", spec.R),
-                    ("T", "Front transmittance", spec.T),
-                    ("back_R", "Back reflectance", spec.back_R),
-                    ("back_T", "Back transmittance", spec.back_T),
-                ]
             )
 
         return fields
@@ -1218,31 +1150,38 @@ class OpticalEditorApp:
     def _component_material_fields(
         self,
         spec: ComponentSpec,
-    ) -> list[tuple[str, str, str]]:
-        if spec.component_type in THICK_COMPONENTS:
-            return [
+    ):
+        """
+        Material fields driven entirely
+        by the registry.
+        """
+
+        definition = component_definition(
+            spec.component_type
+        )
+
+        fields = []
+
+        for field in definition.fields:
+
+            if field.type != "material":
+                continue
+
+            value = getattr(
+                spec,
+                field.name,
+            )
+
+            fields.append(
                 (
-                    "material",
-                    "Material",
-                    spec.material,
+                    field.name,
+                    field.label,
+                    value,
                 )
-            ]
+            )
 
-        if spec.component_type in ("OpticalInterface", "CircularBeamSplitter"):
-            return [
-                (
-                    "material1",
-                    "Material 1",
-                    spec.material1,
-                ),
-                (
-                    "material2",
-                    "Material 2",
-                    spec.material2,
-                ),
-            ]
+        return fields
 
-        return []
 
     def _add_entry(
         self,

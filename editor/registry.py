@@ -21,6 +21,12 @@ COMPONENT_DEFINITIONS_DIR = (
 # Data model
 # ==========================================================
 
+from dataclasses import dataclass
+from pathlib import Path
+import json
+import importlib
+
+
 @dataclass
 class ComponentField:
 
@@ -35,7 +41,7 @@ class ComponentField:
 class ComponentDefinition:
 
     #
-    # Component identity
+    # identity
     #
 
     type: str
@@ -45,7 +51,7 @@ class ComponentDefinition:
     class_name: str
 
     #
-    # Editor metadata
+    # editor metadata
     #
 
     prefix: str
@@ -53,34 +59,34 @@ class ComponentDefinition:
     color: str
 
     #
-    # Object creation
+    # construction
     #
 
     add_mode: str
 
+    rotation_mode: str
+
     constructor_map: dict
 
-    rotation_mode: str
-    
     #
-    # Defaults
+    # defaults
     #
 
     defaults: dict
 
     #
-    # Editor fields
+    # editor fields
     #
 
     fields: list[ComponentField]
 
     #
-    # Debugging
+    # debug
     #
 
     file_name: str
 
-    # ------------------------------------------------------
+    # --------------------------------------------------
 
     def load_class(
         self,
@@ -94,8 +100,8 @@ class ComponentDefinition:
             module,
             self.class_name,
         )
-
-
+    
+    
 # ==========================================================
 # Loading
 # ==========================================================

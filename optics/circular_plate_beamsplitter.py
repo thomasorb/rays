@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from scipy.spatial.transform import Rotation
+
 from materials.air import AIR
 
 from .circular_optical_interface import (
@@ -9,6 +11,7 @@ from .circular_optical_interface import (
 )
 
 import config
+
 
 class CircularPlateBeamSplitter:
     """
@@ -28,6 +31,9 @@ class CircularPlateBeamSplitter:
       back interface
           |
         AIR
+
+    The rear surface can optionally be
+    tilted by a wedge angle.
     """
 
     def __init__(
@@ -44,6 +50,8 @@ class CircularPlateBeamSplitter:
         diameter,
 
         material,
+
+        wedge_angle_deg=0.0,
 
         R=config.DEFAULT_BEAMSPLITTER_R,
         T=config.DEFAULT_BEAMSPLITTER_T,
@@ -71,6 +79,10 @@ class CircularPlateBeamSplitter:
 
         self.material = material
 
+        self.wedge_angle_deg = float(
+            wedge_angle_deg
+        )
+
         #
         # Front coated interface
         #
@@ -93,7 +105,10 @@ class CircularPlateBeamSplitter:
         )
 
         #
-        # Rear interface
+        # Reference thickness
+        #
+        # Thickness is defined along the
+        # front surface normal.
         #
 
         normal = (
@@ -108,13 +123,31 @@ class CircularPlateBeamSplitter:
             * normal
         )
 
+        #
+        # Rear wedge surface
+        #
+        # Wedge is applied around the
+        # local Y axis.
+        #
+
+        back_rotation = (
+
+            self.rotation
+
+            * Rotation.from_euler(
+                "y",
+                self.wedge_angle_deg,
+                degrees=True,
+            )
+        )
+
         self.back = CircularOpticalInterface(
 
             name=f"{name}.back",
 
             position=back_position,
 
-            rotation=self.rotation,
+            rotation=back_rotation,
 
             diameter=self.diameter,
 
@@ -178,7 +211,9 @@ class CircularPlateBeamSplitter:
 
         return self.front.normal
 
-    # --------------------------------------------------
+    # ==================================================
+    # Debug
+    # ==================================================
 
     def __repr__(
         self,
@@ -189,6 +224,7 @@ class CircularPlateBeamSplitter:
             f"name={self.name}, "
             f"diameter={self.diameter}, "
             f"thickness={self.thickness}, "
+            f"wedge_angle_deg={self.wedge_angle_deg}, "
             f"material={self.material.name}"
             f")"
         )
